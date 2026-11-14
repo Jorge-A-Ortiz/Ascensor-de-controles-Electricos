@@ -41,10 +41,10 @@ void rules_block_defaults(rule_block_t *block)
         return;
     }
     memset(block, 0, sizeof(*block));
-    block->enabled    = false;
-    block->in_gpio    = 2;
+    block->enabled    = true;
+    block->in_gpio    = 0xFF;   /* sin asignar: hay que elegir GPIO */
     block->in_level   = 1;
-    block->out_gpio   = 3;
+    block->out_gpio   = 0xFF;
     block->out_level  = 1;
     block->rest_level = 0;
 }
@@ -109,6 +109,11 @@ esp_err_t rules_validate(const rule_block_t *blocks, size_t count,
     for (size_t i = 0; i < count; i++) {
         const rule_block_t *b = &blocks[i];
 
+        if (b->in_gpio == 0xFF || b->out_gpio == 0xFF) {
+            return fail(err, err_len,
+                        "Completa entrada y salida de cada bloque antes de activar "
+                        "(bloque %u).", (unsigned)(i + 1));
+        }
         if (b->in_gpio > USER_GPIO_MAX || b->out_gpio > USER_GPIO_MAX) {
             return fail(err, err_len, "GPIO fuera de rango en el bloque %u.",
                         (unsigned)(i + 1));

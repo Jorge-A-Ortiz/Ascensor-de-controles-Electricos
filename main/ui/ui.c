@@ -722,7 +722,7 @@ static void create_tecnica(lv_obj_t *tile)
     lv_obj_set_style_pad_row(s_tech_floor_list, 8, 0);
 
     /* Bloques */
-    lv_obj_t *blocks = card(col, lv_pct(100), 100);
+    lv_obj_t *blocks = card(col, lv_pct(100), 150);
     lv_obj_set_flex_flow(blocks, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(blocks, 6, 0);
 

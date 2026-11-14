@@ -144,6 +144,11 @@ static void plan_next(void)
         return;
     }
 
+    /* En modo real no se puede planificar sin posicion confirmada */
+    if (!s_state.position_known && !s_state.demo_mode) {
+        return;
+    }
+
     uint8_t cur = s_state.current_floor;
 
     if (s_pending[cur - 1]) {
@@ -364,7 +369,9 @@ esp_err_t elevator_call(uint8_t floor, elevator_dir_t dir)
 
     if (floor == s_state.current_floor && !s_state.moving) {
         emit(ELEV_EVT_REJECTED, floor, "La cabina ya esta en este piso.");
-        open_doors();
+        if (s_state.position_known) {
+            open_doors();
+        }
         return ESP_OK;
     }
 

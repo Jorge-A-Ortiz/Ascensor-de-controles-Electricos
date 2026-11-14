@@ -98,7 +98,6 @@ esp_err_t app_add_block(rule_block_t **out)
     }
     rule_block_t *b = &s_app.blocks[s_app.block_count];
     rules_block_defaults(b);
-    b->enabled = false;   /* se habilita al validar */
     s_app.block_count++;
 
     if (out != NULL) {
