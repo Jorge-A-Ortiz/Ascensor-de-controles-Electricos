@@ -1,0 +1,12 @@
+dependencies:
+  idf: ">=5.4"
+
+  # LVGL 8, igual que el firmware original (rutas lvgl8/esp_lvgl_port en el binario)
+  lvgl/lvgl: "~8.4.0"
+  espressif/esp_lvgl_port: "^2.4.0"
+
+  # Panel MIPI DSI del CrowPanel P4 (controlador EK79007)
+  espressif/esp_lcd_ek79007: "^1.0.0"
+
+  # Táctil GT911 por I2C
+  espressif/esp_lcd_touch_gt911: "^1.1.0"

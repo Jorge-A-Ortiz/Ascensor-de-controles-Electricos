@@ -1,0 +1,27 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "app.c"
+        "board/board.c"
+        "storage/storage.c"
+        "elevator/elevator.c"
+        "rules/rules.c"
+        "ui/ui.c"
+    INCLUDE_DIRS
+        "."
+        "include"
+        "board"
+        "storage"
+        "elevator"
+        "rules"
+        "ui"
+    REQUIRES
+        driver
+        esp_driver_gpio
+        esp_driver_ledc
+        esp_driver_i2c
+        esp_lcd
+        nvs_flash
+        esp_timer
+        json
+)

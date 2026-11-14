@@ -1,0 +1,20 @@
+# Build
+build/
+sdkconfig
+sdkconfig.old
+dependencies.lock
+managed_components/
+
+# Binarios generados
+*.bin
+*.elf
+*.map
+!firmware/backup_esp32p4_16MB.bin
+
+# Editores
+.vscode/
+.idea/
+
+# Sistema
+Thumbs.db
+.DS_Store

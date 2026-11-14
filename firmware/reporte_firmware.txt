@@ -1,0 +1,338 @@
+========================================================================
+ARCHIVO: firmware\backup_esp32p4_16MB.bin
+TAMANO : 16,777,216 bytes (16.00 MB)
+SHA256 : ade0742d81e76f7d41a270973dc8601cf64865915465cfe45a4eab23af2724f5
+========================================================================
+
+[1] CABECERAS DE APLICACION (esp_app_desc_t)
+  --- descriptor en 0x010020 (particion app en 0x010000) ---
+  Proyecto        : AscensorCrowPanel
+  Version         : 1
+  Compilado       : Oct 30 2026 21:01:04
+  ESP-IDF         : v6.1-dirty
+  SHA256 del ELF  : 27919f3eefa6f1b10d213dfd626ce03c4e646611567683f51f315f464cbe6812
+  Secure version  : 0
+  --- descriptor en 0x210020 (particion app en 0x210000) ---
+  Proyecto        : HMI_Code_FP
+  Version         : 58a3200-dirty
+  Compilado       : Aug 19 2026 02:58:04
+  ESP-IDF         : v5.5.4-dirty
+  SHA256 del ELF  : 693de58a373824b90b82419bc216aaf15a044ed1c869cda32fe6ee278bca6466
+  Secure version  : 0
+
+  AVISO: hay mas de un firmware en el flash (posibles slots OTA).
+
+[2] TABLA DE PARTICIONES
+  LABEL            TIPO   SUBTIPO        OFFSET     TAMANO
+  nvs              data   nvs        0x00009000        16K
+  otadata          data   ota_data   0x0000d000         8K
+  phy_init         data   phy_init   0x0000f000         4K
+  factory          app    factory    0x00010000      4032K
+  ota_0            app    ota_0      0x00400000      4032K
+  ota_1            app    ota_1      0x007f0000      4032K
+
+[3] CONTENIDO DE NVS (nvs) - posibles claves y valores
+  0x009000  'ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿ'
+  0x00a008  'þÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿó'
+  0x00a02f  'ªªªªªªªªªªªªªªªªú'
+  0x00a044  'Ï?O'
+  0x00a048  'rules_v1'
+  0x00a05a  'ÿÿÿÿÿÿ'
+  0x00a788  'rules_v1'
+  0x00a7a4  'é¿X*rules_v1'
+  0x00a7bd  "'SÔ"
+  0x00b000  'þÿÿÿ'
+  0x00b008  'þÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ:'
+  0x00b01e  '·kªªªªÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ'
+  0x00b046  '>^elevator'
+  0x00b059  'ÿÿÿÿÿÿÿ'
+  0x00b067  '1base3'
+  0x00b079  'ÿÿÿÿÿÿÿ'
+  0x00b087  '$floor_gpio'
+  0x00b09d  '£UÍÿ'
+  0x00b0a2  'ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ'
+  0x00b0c3  'ÿî»Æ·floor_gpio'
+  0x00b0e8  'floor_level'
+  0x00b0fd  '¢º¬'
+  0x00b119  'ÿÿÿÿÿÿÿ'
+  0x00b126  '1áfloor_level'
+  0x00b143  'ÿµë'
+  0x00b148  'logic_blocks'
+  0x00b159  'ÿÿÿÿÿÿÿ'
+  0x00b165  'åÃírules_v1'
+  0x00b17a  'ÿÿÿÿÿÿ'
+  0x00b225  'X2mrules_v1'
+  0x00b23e  'ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿ'
+  0x00c008  'þÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÔ'
+  0x00c047  'vrules_v1'
+  0x00c05a  'ÿÿÿÿÿÿ'
+  0x00c2e8  'rules_v1'
+  0x00c303  'ÿüìçTfloors'
+  0x00c319  'ÿÿÿÿÿÿÿ'
+  0x00c323  'ÿbìM'
+  0x00c328  'floors'
+  0x00c339  'ÿÿÿÿÿÿÿ'
+  0x00c348  'floors'
+  0x00c359  'ÿÿÿÿÿÿÿ'
+  0x00c365  'ëhÚfloors'
+  0x00c379  'ÿÿÿÿÿÿÿ'
+  0x00c383  'ÿ³ùH'
+  0x00c388  'floors'
+  0x00c399  'ÿÿÿÿÿÿÿ'
+  0x00c3a3  'ÿ-ùâÏfloors'
+  0x00c3b9  'ÿÿÿÿÿÿÿ'
+  0x00c3c3  'ÿÎþmAfloors'
+  0x00c3d9  'ÿÿÿÿÿÿÿ'
+  0x00c3e3  'ÿPþÇ'
+  0x00c3e8  'floors'
+  0x00c3f9  'ÿÿÿÿÿÿÿ'
+  0x00c403  'ÿI÷'
+  0x00c408  'floors'
+  0x00c419  'ÿÿÿÿÿÿÿ'
+  0x00c423  'ÿ×÷¨Kfloors'
+  0x00c439  'ÿÿÿÿÿÿÿ'
+  0x00c443  "ÿ4ð'Åfloors"
+  0x00c459  'ÿÿÿÿÿÿÿ'
+  0x00c463  'ÿ×÷¨Kfloors'
+  0x00c479  'ÿÿÿÿÿÿÿ'
+  0x00c483  'ÿI÷'
+  0x00c488  'floors'
+  0x00c499  'ÿÿÿÿÿÿÿ'
+  0x00c4a3  'ÿPþÇ'
+  0x00c4a8  'floors'
+  0x00c4b9  'ÿÿÿÿÿÿÿ'
+  0x00c4c3  'ÿÎþmAfloors'
+  0x00c4d9  'ÿÿÿÿÿÿÿ'
+  0x00c4e3  'ÿ-ùâÏfloors'
+  0x00c4f9  'ÿÿÿÿÿÿÿ'
+  0x00c507  'ärules_v1'
+  0x00c51a  'ÿÿaIp]'
+  0x00ce03  'ÿ÷÷'
+  0x00ce08  'rules_v1'
+  0x00ce24  '°§ñárules_v1'
+  0x00ce3a  'ÿÿe~'
+
+[4] STRINGS (73,338 encontrados)
+
+  -- Posibles nombres de tareas FreeRTOS (7) --
+  0x012ce8  main_task
+  0x01fcbc  ipc_task
+  0x0208f0  main_task
+  0x02144c  capture_task
+  0x2120e0  main_task
+  0x21d854  main_task
+  0x2242ec  ipc_task
+
+  -- Posibles tags de log (504) --
+  0x003248  QOUT
+  0x003254  DOUT
+  0x0034e4  MXIC
+  0x0034ec  ISSI
+  0x003500  XM25QU64A
+  0x004c34  M3QE
+  0x0105c8  ISSI
+  0x0105d0  WINBOND
+  0x0105e0  MXIC
+  0x0105e8  MXIC_OPI
+  0x0105f4  BOYA
+  0x011824  RETENT_RAM
+  0x011830  SPIRAM
+  0x01183c  RTCRAM
+  0x014a38  SUBIENDO
+  0x014a44  BAJANDO
+  0x014c20  ASCENSOR
+  0x014e7c  FRAME565
+  0x014e88  END565
+  0x014fb6  CNICA
+  0x015268  CERRAR
+  0x015b08  SOUND
+  0x015d0c  RENDER
+  0x015d44  ILLUMINATE
+  0x015f08  DISPLAY
+  0x015f58  SLIDE
+  0x015f98  DOWN
+  0x015fa0  TOUCH
+  0x0165cc  GT911
+  0x01a414  RTCIO
+  0x01b964  ESP_FAIL
+  0x01b970  ESP_OK
+  0x01b978  ESP_ERR_NO_MEM
+  0x01b988  ESP_ERR_INVALID_ARG
+  0x01b99c  ESP_ERR_INVALID_STATE
+  0x01b9b4  ESP_ERR_INVALID_SIZE
+  0x01b9cc  ESP_ERR_NOT_FOUND
+  0x01b9e0  ESP_ERR_NOT_SUPPORTED
+  0x01b9f8  ESP_ERR_TIMEOUT
+  0x01ba24  ESP_ERR_INVALID_CRC
+  0x01ba50  ESP_ERR_INVALID_MAC
+  0x01ba64  ESP_ERR_NOT_FINISHED
+  0x01ba7c  ESP_ERR_NOT_ALLOWED
+  0x01ba90  ESP_ERR_NVS_BASE
+  0x01bac0  ESP_ERR_NVS_NOT_FOUND
+  0x01baf4  ESP_ERR_NVS_READ_ONLY
+  0x01bb9c  ESP_ERR_NVS_PAGE_FULL
+  0x01bd74  ESP_ERR_OTA_BASE
+  0x01be80  ESP_ERR_EFUSE
+  0x01be90  ESP_OK_EFUSE_CNT
+  0x01bedc  ESP_ERR_CODING
+  0x01bf2c  ESP_ERR_BURN_WR_DIS
+  0x01bf40  ESP_ERR_IMAGE_BASE
+  0x01bf70  ESP_ERR_IMAGE_INVALID
+  0x01bf88  ESP_ERR_WIFI_BASE
+  0x01bf9c  ESP_ERR_WIFI_NOT_INIT
+  0x01bfec  ESP_ERR_WIFI_IF
+  0x01bffc  ESP_ERR_WIFI_MODE
+  0x01c010  ESP_ERR_WIFI_STATE
+  0x01c024  ESP_ERR_WIFI_CONN
+
+  -- Strings relacionados con el proyecto (1269) --
+  0x002028  v6.1-dirty
+  0x002150  E (%lu) %s: load partition table error!
+  0x002254  //IDF/components/bootloader_support/src/bootloader_utility.c
+  0x0022a4  I (%lu) %s: Loaded app from partition at offset 0x%lx
+  0x002398  E (%lu) %s: bootloader_mmap(0x%lx, 0x%lx) failed
+  0x0023e0  primary bootloader
+  0x002458  NVS keys
+  0x002464  WiFi data
+  0x002484  recovery bootloader
+  0x002498  ota bootloader
+  0x0024a8  E (%lu) %s: bootloader_mmap(0x%x, 0x%x) failed
+  0x0028bc  //IDF/components/bootloader_support/include/bootloader_util.h
+  0x00290c  load
+  0x002918  overlaps bootloader stack
+  0x002934  overlaps bootloader data
+  0x002950  bad load address range
+  0x002974  E (%lu) %s: bootloader_flash_read failed at 0x%08lx
+  0x0029d8  E (%lu) %s: Segment %d load address 0x%08lx, doesn't match data 0x%08lx
+  0x002a6c  load_end > load_addr
+  0x002a84  //IDF/components/bootloader_support/src/esp_image_format.c
+  0x002cb4  //IDF/components/bootloader_support/src/bootloader_sha.c
+  0x002d44  //IDF/components/bootloader_support/src/esp32p4/bootloader_esp32p4.c
+  0x002df0  E (%lu) %s: chip revision check failed. Required >= v%d.%d, found v%d.%d.
+  0x002e3c  E (%lu) %s: chip revision check failed. Required <= v%d.%d, found v%d.%d.
+  0x002e88  E (%lu) %s: Image requires efuse blk rev >= v%lu.%lu, but chip is v%lu.%lu
+  0x002ed4  E (%lu) %s: Image requires efuse blk rev <= v%lu.%lu, but chip is v%lu.%lu
+  0x002f68  //IDF/components/bootloader_support/src/bootloader_random.c
+  0x002fa4  bootloader_flash
+  0x002fb8  E (%lu) %s: tried to bootloader_mmap twice
+  0x002fe4  E (%lu) %s: bootloader_mmap excess size %lx
+  0x003034  E (%lu) %s: bootloader_flash_read src_addr 0x%x, size 0x%x or dest 0x%x not 4-byte aligned
+  0x0030a0  //IDF/components/bootloader_support/bootloader_flash/src/bootloader_flash.c
+  0x003158  E (%lu) %s: bootloader_flash_write dest_addr 0x%x not %d-byte aligned
+  0x0031a0  E (%lu) %s: bootloader_flash_write size 0x%x not %d-byte aligned
+  0x0031e4  E (%lu) %s: bootloader_flash_write src 0x%x not 4 byte aligned
+  0x0032a4  I (%lu) %s: SPI Speed      : %s
+  0x0032c8  I (%lu) %s: SPI Mode       : %s
+  0x0032ec  I (%lu) %s: SPI Flash Size : %s
+  0x003310  E (%lu) %s: failed to load bootloader image header!
+  0x0033cc  I (%lu) %s: ESP-IDF %s 2nd stage bootloader
+  0x00341c  I (%lu) %s: Multicore bootloader
+  0x0035b4  unpack_load_app
+  0x0035c4  bootloader_util_regions_overlap
+  0x0035e4  verify_load_addresses
+  0x0035fc  bootloader_sha256_finish
+  0x003618  bootloader_sha256_data
+  0x003630  bootloader_init
+  0x003640  bootloader_fill_random
+  0x003658  bootloader_flash_read_sfdp
+  0x003674  bootloader_flash_execute_command_common
+  0x00b046  >^elevator
+  0x00b087  $floor_gpio
+  0x00b0c3  ÿî»Æ·floor_gpio
+  0x00b0e8  floor_level
+  0x00b126  1áfloor_level
+  0x00c303  ÿüìçTfloors
+  0x00c328  floors
+  0x00c348  floors
+  0x00c365  ëhÚfloors
+  0x00c388  floors
+  0x00c3a3  ÿ-ùâÏfloors
+  0x00c3c3  ÿÎþmAfloors
+  0x00c3e8  floors
+  0x00c408  floors
+  0x00c423  ÿ×÷¨Kfloors
+  0x00c443  ÿ4ð'Åfloors
+  0x00c463  ÿ×÷¨Kfloors
+  0x00c488  floors
+  0x00c4a8  floors
+  0x00c4c3  ÿÎþmAfloors
+  0x00c4e3  ÿ-ùâÏfloors
+  0x010050  AscensorCrowPanel
+  0x010090  v6.1-dirty
+  0x010360  config->host_id != SPI1_HOST || dev_id != 0
+  0x01038c  //IDF/components/spi_flash/esp_flash_spi_init.c
+  0x010530  spi_flash
+  0x01053c  W (%lu) %s: Detected %s flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_%s_CHIP` in menuconfig
+  0x010620  //IDF/components/spi_flash/cache_utils.c
+  0x01064c  esp_task_stack_is_sane_cache_disabled()
+  0x0106b8  !(xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED && cpuid != 0)
+  0x010700  lock->acquired_count >= 0
+  0x01071c  //IDF/components/spi_flash/flash_mmap.c
+  0x010744  lock->acquired_count <= 0
+  0x010770  lock->acquired_count > 0
+  0x0107b0  E (%lu) %s: Address 0x%08x is out of range for 24bit flash mapping, see CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH and CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH for more details
+  0x0108bc  io <= ESP_MSPI_IO_WP
+  0x0108d4  //IDF/components/spi_flash/flash_ops.c
+  0x010aec  I (%lu) %s: GPIO %d and %d are used as console UART I/O pins
+  0x010d60  Detected in task "
+  0x010f20  Load address misaligned
+  0x010f38  Load access fault
+  0x010f7c  Environment call from U-mode
+  0x010f9c  Environment call from S-mode
+  0x010fbc  Environment call from M-mode
+  0x010ff4  Load page fault
+  0x011830  SPIRAM
+  0x011c38  E (%lu) %s: %s(%d): acquire internal LDO for MPLL failed
+  0x011c88  W (%lu) %s: derived clk %d released without matching acquire
+  0x011df8  E (%lu) %s: %s(%d): can't acquire the channel, already in use by others or not adjustable
+  0x012214  module_is_inited(module) && "All passive module must be inited first!"
+  0x0122b0  E (%lu) %s: GPIO%d not support internal PU/PD
+  0x0122e0  gpio_hold_en(gpio_idx)
+  0x0123e4  E (%lu) %s: Deep sleep requests are not allowed from tasks with stacks in PSRAM
+  0x012770  /IDF/components/esp_hal_gpio/esp32p4/include/hal/rtc_io_ll.h
+  0x012ce8  main_task
+  0x012d54  esp_task_wdt_init(&twdt_config)
+  0x012fd4  !( ( xTaskGetSchedulerState() == ( ( BaseType_t ) 0 ) ) && ( xTicksToWait != 0 ) )
+  0x013174  uxTaskPriority < ( 25 )
+  0x01318c  //IDF/components/freertos/FreeRTOS-Kernel/tasks.c
+  0x013208  ( ( xTaskGetSchedulerState() == ( ( BaseType_t ) 0 ) ) ? ( ( BaseType_t ) 1 ) : ( ( BaseType_t ) 0 ) ) == ( ( BaseType_t ) 0 )
+  0x013338  //IDF/components/freertos/esp_additions/freertos_tasks_c_additions.h
+  0x013380  ( xIdleTaskHandle[ xCoreID ] != ((void *)0) )
+  0x0133c8  ( ( ( ( pxDelayedTaskList )->uxNumberOfItems == ( UBaseType_t ) 0 ) ? ( ( BaseType_t ) 1 ) : ( ( BaseType_t ) 0 ) ) )
+  0x013440  ( ( xTaskGetSchedulerState() == ( ( BaseType_t ) 0 ) ) ? ( ( BaseType_t ) 1 ) : ( ( BaseType_t ) 0 ) ) == ( ( BaseType_t ) 1 )
+  0x0134c0  xTaskScheduled == ( ( BaseType_t ) 1 )
+  0x0135f4  xTaskToNotify
+  0x013758  xPortCheckValidTCBMem(pxTaskBuffer)
+  0x013818  //IDF/components/esp_hw_support/include/spinlock.h
+  0x0138a8  lock->owner == SPINLOCK_FREE || lock->owner == other_core_owner_id
+  0x013940  ***ERROR*** A stack overflow in task 
+  0x013af0  pxTaskBuffer != ((void *)0)
+  0x013b68  esp_intr_alloc(ETS_SYSTIMER_TARGET0_INTR_SOURCE + cpuid, ESP_INTR_FLAG_IRAM | level, SysTickIsrHandler, &systimer_hal, NULL)
+  0x01401c  E (%lu) %s: SPI SRAM memory test fail. %d/%d writes failed, first @ %X
+  0x014064  I (%lu) %s: SPI SRAM memory test OK
+  0x01408c  W (%lu) %s: Virtual address not enough for PSRAM, map as much as we can. %dMB is mapped
+  0x0141d4  E (%lu) %s: Failed to initialize PSRAM MSPI memory barrier!
+  0x014268  E (%lu) %s: %s(%d): Failed to allocate MSPI psram interrupt
+  0x0142bc  //IDF/components/esp_driver_uart/src/uart_vfs.c
+  0x0142ec  /dev/uart
+  0x0142f8  esp_vfs_register_fs("/dev/uart", &s_vfs_uart, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL)
+  0x01435c  /IDF/components/esp_driver_uart/src/uart_vfs.c
+  0x0143c0  uart
+  0x0143c8  E (%lu) %s: %s(%d): uart_num error
+  0x0144d0  E (%lu) %s: %s(%d): uart port not enabled, unable to get register values
+  0x014544  E (%lu) %s: %s(%d): uart driver error
+  0x0145bc  clk_cycles <= UART_GLITCH_FILT_V
+  0x014604  !(is_rs485_mode && disabled && uart_hal_get_intraw_mask(&(uart_context[uart_num].hal)) & UART_INTR_TX_DONE)
+  0x014670  //IDF/components/esp_driver_uart/src/uart.c
+  0x0146c0  E (%lu) %s: %s(%d): uart size error
+  0x0146e8  E (%lu) %s: %s(%d): uart data null
+  0x014774  E (%lu) %s: %s(%d): uart rx buffer length error
+  0x0147a8  E (%lu) %s: %s(%d): uart tx buffer length error
+  0x0147dc  W (%lu) %s: ESP_INTR_FLAG_IRAM flag is set while CONFIG_UART_ISR_IN_IRAM is not enabled, flag updated
+  0x014844  E (%lu) %s: UART driver malloc error
+  0x014890  E (%lu) %s: UART driver already installed
+  0x0148bc  E (%lu) %s: %s(%d): Could not allocate an interrupt for UART
+  0x0148fc  E (%lu) %s: %s(%d): Could not configure the interrupt for UART
+  0x014a4c  GPIO activo
+  0x014a58  Piso %u
+  0x014a6c  sin GPIO
