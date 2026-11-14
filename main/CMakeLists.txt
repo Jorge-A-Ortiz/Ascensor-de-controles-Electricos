@@ -23,5 +23,4 @@ idf_component_register(
         esp_lcd
         nvs_flash
         esp_timer
-        json
 )

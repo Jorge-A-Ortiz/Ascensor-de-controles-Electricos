@@ -115,16 +115,28 @@ esp_err_t storage_save_config(const elevator_config_t *cfg)
         return ESP_FAIL;
     }
 
-    esp_err_t err = ESP_OK;
-    err |= nvs_set_u8(h, STORAGE_KEY_FLOORS, cfg->floors);
-    err |= nvs_set_blob(h, STORAGE_KEY_FLOOR_GPIO, cfg->floor_gpio,
-                        sizeof(cfg->floor_gpio));
-    err |= nvs_set_blob(h, STORAGE_KEY_FLOOR_LEVEL, cfg->floor_level,
-                        sizeof(cfg->floor_level));
-    err |= nvs_set_u8(h, STORAGE_KEY_DEMO, cfg->demo_mode ? 1 : 0);
-    err |= nvs_set_u8(h, STORAGE_KEY_BLOCKS_ON, cfg->blocks_enabled ? 1 : 0);
-    err |= nvs_set_u8(h, STORAGE_KEY_BASE3, cfg->base3);
-    err |= nvs_set_u8(h, STORAGE_KEY_SOUND, cfg->sound);
+    esp_err_t err;
+    err = nvs_set_u8(h, STORAGE_KEY_FLOORS, cfg->floors);
+    if (err == ESP_OK) {
+        err = nvs_set_blob(h, STORAGE_KEY_FLOOR_GPIO, cfg->floor_gpio,
+                           sizeof(cfg->floor_gpio));
+    }
+    if (err == ESP_OK) {
+        err = nvs_set_blob(h, STORAGE_KEY_FLOOR_LEVEL, cfg->floor_level,
+                           sizeof(cfg->floor_level));
+    }
+    if (err == ESP_OK) {
+        err = nvs_set_u8(h, STORAGE_KEY_DEMO, cfg->demo_mode ? 1 : 0);
+    }
+    if (err == ESP_OK) {
+        err = nvs_set_u8(h, STORAGE_KEY_BLOCKS_ON, cfg->blocks_enabled ? 1 : 0);
+    }
+    if (err == ESP_OK) {
+        err = nvs_set_u8(h, STORAGE_KEY_BASE3, cfg->base3);
+    }
+    if (err == ESP_OK) {
+        err = nvs_set_u8(h, STORAGE_KEY_SOUND, cfg->sound);
+    }
 
     if (err == ESP_OK) {
         err = nvs_commit(h);
@@ -186,7 +198,9 @@ esp_err_t storage_save_blocks(const struct rule_block_s *blocks, size_t count)
 
     esp_err_t err = nvs_set_blob(h, STORAGE_KEY_BLOCKS, blocks,
                                  count * sizeof(rule_block_t));
-    err |= nvs_set_str(h, STORAGE_KEY_RULES_VER, STORAGE_RULES_VERSION);
+    if (err == ESP_OK) {
+        err = nvs_set_str(h, STORAGE_KEY_RULES_VER, STORAGE_RULES_VERSION);
+    }
     if (err == ESP_OK) {
         err = nvs_commit(h);
     }

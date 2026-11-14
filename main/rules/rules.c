@@ -314,7 +314,6 @@ void rules_tick(void)
     /* 2. Resolver la salida deseada de cada GPIO */
     bool  wanted_valid[RULES_GPIO_TABLE_SIZE];
     bool  wanted[RULES_GPIO_TABLE_SIZE];
-    uint8_t rest[RULES_GPIO_TABLE_SIZE];
     memset(wanted_valid, 0, sizeof(wanted_valid));
 
     for (size_t i = 0; i < s_count; i++) {
@@ -336,7 +335,6 @@ void rules_tick(void)
         }
         wanted_valid[b->out_gpio] = true;
         wanted[b->out_gpio]       = level;
-        rest[b->out_gpio]         = b->rest_level;
     }
 
     /* 3. Aplicar */

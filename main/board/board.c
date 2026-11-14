@@ -20,6 +20,7 @@
 #include "driver/ledc.h"
 
 #include "esp_lcd_ek79007.h"
+#include "esp_lcd_io_i2c.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
@@ -130,9 +131,24 @@ static esp_err_t display_init(void)
                         TAG, "dbi io");
     s_io = io;
 
-    esp_lcd_dpi_panel_config_t dpi_cfg =
-        EK79007_1024_600_PANEL_60HZ_DPI_CONFIG(LCD_COLOR_PIXEL_FORMAT_RGB565);
-    dpi_cfg.num_fbs = 2;   /* doble framebuffer, como el original */
+    esp_lcd_dpi_panel_config_t dpi_cfg = {
+        .virtual_channel     = 0,
+        .dpi_clk_src         = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
+        .dpi_clock_freq_mhz  = 52,
+        .in_color_format     = LCD_COLOR_FMT_RGB565,
+        .out_color_format    = LCD_COLOR_FMT_RGB565,
+        .num_fbs             = 2,   /* doble framebuffer, como el original */
+        .video_timing = {
+            .h_size            = LCD_PANEL_H_RES,
+            .v_size            = LCD_PANEL_V_RES,
+            .hsync_pulse_width = 10,
+            .hsync_back_porch  = 160,
+            .hsync_front_porch = 160,
+            .vsync_pulse_width = 1,
+            .vsync_back_porch  = 23,
+            .vsync_front_porch = 12,
+        },
+    };
 
     ek79007_vendor_config_t vendor_cfg = {
         .mipi_config = {
@@ -168,34 +184,44 @@ static esp_err_t lvgl_init(void)
     port_cfg.timer_period_ms = 5;
     ESP_RETURN_ON_ERROR(lvgl_port_init(&port_cfg), TAG, "lvgl port");
 
+    /* El panel es DSI (DPI): LVGL usa sus propios buffers y el puerto los
+     * vuelca al framebuffer. La rotacion a vertical se hace por software
+     * (sw_rotate), porque un panel DPI no acepta swap_xy por hardware. */
     lvgl_port_display_cfg_t disp_cfg = {
         .io_handle     = s_io,
         .panel_handle  = s_panel,
-        .buffer_size   = LCD_H_RES * 100,
+        .buffer_size   = LCD_PANEL_H_RES * 60,
         .double_buffer = true,
-        .hres          = LCD_H_RES,
-        .vres          = LCD_V_RES,
+        .hres          = LCD_PANEL_H_RES,
+        .vres          = LCD_PANEL_V_RES,
         .monochrome    = false,
-        .rotation      = {
-            .swap_xy  = true,
-            .mirror_x = true,
-            .mirror_y = false,
-        },
         .flags = {
-            .buff_dma     = false,
+            .buff_dma     = true,
             .buff_spiram  = true,
-            .swap_bytes   = false,
+            .sw_rotate    = true,
             .full_refresh = false,
             .direct_mode  = false,
         },
     };
-    s_disp = lvgl_port_add_disp(&disp_cfg);
+    lvgl_port_display_dsi_cfg_t dsi_cfg = {
+        .flags.avoid_tearing = false,
+    };
+    s_disp = lvgl_port_add_disp_dsi(&disp_cfg, &dsi_cfg);
     ESP_RETURN_ON_FALSE(s_disp != NULL, ESP_FAIL, TAG, "lvgl disp");
+
+    /* 90 grados: 1024x600 nativo -> 600x1024 logico. */
+    lv_disp_set_rotation(s_disp, LV_DISP_ROT_90);
+
+    esp_lcd_panel_io_handle_t tp_io = NULL;
+    esp_lcd_panel_io_i2c_config_t tp_io_cfg = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+    tp_io_cfg.scl_speed_hz = BSP_I2C_FREQ_HZ;
+    ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c(s_i2c_bus, &tp_io_cfg, &tp_io),
+                        TAG, "touch io");
 
     esp_lcd_touch_handle_t tp = NULL;
     esp_lcd_touch_config_t tp_cfg = {
-        .x_max        = LCD_V_RES,   /* ya rotado */
-        .y_max        = LCD_H_RES,
+        .x_max        = LCD_H_RES,   /* tras swap: eje X logico (600) */
+        .y_max        = LCD_V_RES,   /* tras swap: eje Y logico (1024) */
         .rst_gpio_num = BSP_TOUCH_RST_GPIO,
         .int_gpio_num = BSP_TOUCH_INT_GPIO,
         .levels = {
@@ -208,7 +234,7 @@ static esp_err_t lvgl_init(void)
             .mirror_y = 0,
         },
     };
-    ESP_RETURN_ON_ERROR(esp_lcd_touch_new_i2c_gt911(s_i2c_bus, &tp_cfg, &tp),
+    ESP_RETURN_ON_ERROR(esp_lcd_touch_new_i2c_gt911(tp_io, &tp_cfg, &tp),
                         TAG, "gt911");
 
     lvgl_port_touch_cfg_t touch_cfg = {

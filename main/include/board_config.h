@@ -15,7 +15,11 @@
 /*  Pantalla MIPI DSI (EK79007)                                        */
 /* ------------------------------------------------------------------ */
 
-/* El panel es fisicamente 1024x600; la app lo usa en vertical. */
+/* El panel es fisicamente 1024x600 (apaisado) y la app lo usa en vertical.
+ * LCD_PANEL_* es la resolucion nativa del panel; LCD_H_RES/LCD_V_RES es la
+ * resolucion logica que ve LVGL despues de rotar 90 grados. */
+#define LCD_PANEL_H_RES         1024
+#define LCD_PANEL_V_RES         600
 #define LCD_H_RES               600
 #define LCD_V_RES               1024
 

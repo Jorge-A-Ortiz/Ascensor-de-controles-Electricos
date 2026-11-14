@@ -92,6 +92,17 @@ En Windows, `install.ps1` del instalador de ESP-IDF deja el entorno listo.
 La primera compilación descarga los componentes declarados en `main/idf_component.yml`
 (LVGL 8.4, `esp_lvgl_port`, `esp_lcd_ek79007`, `esp_lcd_touch_gt911`).
 
+**Estado verificado:** compila sin errores con ESP-IDF v6.1 sobre `esp32p4`
+(binario de ~686 KB, 83 % de la partición libre). Notas de la puesta a punto:
+
+- `CONFIG_BOOTLOADER_LOG_LEVEL_NONE=y`: con logs INFO el bootloader de IDF 6.1
+  ocupa 0x6140 y no cabe en los 0x6000 disponibles antes de la tabla de
+  particiones (0x8000). Desactivarlos conserva el layout original del flash.
+- El panel DSI se configura a mano (campos `in_color_format`/`out_color_format`
+  de IDF 6.x) porque la macro de `esp_lcd_ek79007` 1.0.4 todavía usa la API de IDF 5.
+- La rotación vertical se hace por software (`sw_rotate`), ya que un panel DPI no
+  admite `swap_xy` por hardware.
+
 ## Pines
 
 Están todos en `main/include/board_config.h`:
@@ -119,8 +130,9 @@ que el binario no puede devolver:
 2. **Audio.** El original tenía códec NS4168 con avisos y grabación. Aquí `board_sound()` solo
    registra el evento; falta el driver I2S (`bsp_audio`).
 3. **Rotación.** El original rotaba con PPA y doble framebuffer propio (`bsp_illuminate.c`).
-   Aquí se usa la rotación del puerto LVGL. Si la imagen sale girada, ajusta
-   `disp_cfg.rotation` en `main/board/board.c`.
+   Aquí se usa la rotación por software del puerto LVGL (`lv_disp_set_rotation` con
+   `LV_DISP_ROT_90`). Si la imagen sale girada o espejada, cambia ese valor por
+   `LV_DISP_ROT_270` en `main/board/board.c`.
 
 ## Respaldo y restauración
 
