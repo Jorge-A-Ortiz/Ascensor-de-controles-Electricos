@@ -54,7 +54,7 @@ static QueueHandle_t s_queue;
 static volatile uint8_t s_volume = 70;
 static bool s_ready;
 static audio_stats_t s_stats;
-static volatile int s_pa_force = -1;
+static volatile int s_pa_force = 1;   /* como el original: amplificador siempre habilitado */
 static volatile bool s_tone_full;
 
 static int16_t s_sine[256];
@@ -298,7 +298,7 @@ esp_err_t audio_init(uint8_t volume)
     if (err != ESP_OK) {
         return err;
     }
-    gpio_set_level(AUDIO_PA_GPIO, 0);
+    gpio_set_level(AUDIO_PA_GPIO, 1);
 
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO,
                                                             I2S_ROLE_MASTER);
