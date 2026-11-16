@@ -1153,10 +1153,15 @@ void ui_refresh(void)
     board_unlock();
 }
 
+static elevator_dir_t s_travel_dir = ELEV_DIR_IDLE;   /* sentido del ultimo trayecto */
+
 void ui_on_event(const elevator_event_t *ev)
 {
     if (ev == NULL) {
         return;
+    }
+    if (ev->dir != ELEV_DIR_IDLE) {
+        s_travel_dir = ev->dir;
     }
     if (ev->message != NULL) {
         if (!board_lock(100)) {
@@ -1174,9 +1179,16 @@ void ui_on_event(const elevator_event_t *ev)
         break;
     case ELEV_EVT_POSITION:
         audio_play_floor(AUDIO_SND_BEEP, ev->floor);
+        if (ev->dir != ELEV_DIR_IDLE) {
+            audio_play(AUDIO_SND_RUN);   /* zumbido mientras sigue en marcha */
+        }
         break;
     case ELEV_EVT_ARRIVED:
-        audio_play_floor(AUDIO_SND_ARRIVE, ev->floor);
+        /* un ding al subir, dos al bajar, ding-dong si no se sabe */
+        audio_play(s_travel_dir == ELEV_DIR_UP ? AUDIO_SND_ARRIVE_UP
+                   : s_travel_dir == ELEV_DIR_DOWN ? AUDIO_SND_ARRIVE_DOWN
+                                                   : AUDIO_SND_ARRIVE);
+        s_travel_dir = ELEV_DIR_IDLE;
         break;
     case ELEV_EVT_DOORS:
         audio_play(ev->doors_open ? AUDIO_SND_DOOR_OPEN : AUDIO_SND_DOOR_CLOSE);

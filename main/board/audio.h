@@ -35,6 +35,9 @@ typedef enum {
     AUDIO_SND_BOOT,         /* melodia de arranque                     */
     AUDIO_SND_PLUS,
     AUDIO_SND_MINUS,
+    AUDIO_SND_RUN,          /* zumbido de motor durante el trayecto   */
+    AUDIO_SND_ARRIVE_UP,    /* llegada subiendo: un ding               */
+    AUDIO_SND_ARRIVE_DOWN,  /* llegada bajando: dos ding               */
     AUDIO_SND_COUNT
 } audio_snd_t;
 

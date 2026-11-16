@@ -37,7 +37,7 @@ static const char *TAG = "SOUND";
 #define CHUNK_FRAMES      256
 #define MAX_NOTES         6
 
-typedef enum { W_SINE = 0, W_SQUARE, W_NOISE, W_TRI } wave_t;
+typedef enum { W_SINE = 0, W_SQUARE, W_NOISE, W_TRI, W_BELL, W_THUMP, W_HUM, W_WHIRR } wave_t;
 
 typedef struct {
     uint16_t f0;      /* Hz inicial (0 = silencio) */
@@ -86,36 +86,52 @@ static uint16_t scale_freq(int idx)
 /* ------------------------------------------------------------------ */
 
 static const note_t SND_TAP[]      = { N(1800, 1200, 18, 45, W_SINE) };
-static const note_t SND_PRESS[]    = { N(1500, 900, 22, 60, W_SINE),
-                                       N(0, 0, 8, 0, W_SINE),
-                                       N(900, 1300, 25, 45, W_SINE) };
-static const note_t SND_CALL_UP[]  = { N(660, 660, 70, 70, W_SINE),
-                                       N(880, 880, 70, 70, W_SINE),
-                                       N(1320, 1320, 140, 75, W_SINE) };
-static const note_t SND_CALL_DN[]  = { N(1320, 1320, 70, 70, W_SINE),
-                                       N(880, 880, 70, 70, W_SINE),
-                                       N(660, 660, 140, 75, W_SINE) };
-static const note_t SND_ACCEPT[]   = { N(784, 784, 80, 65, W_SINE),
-                                       N(1047, 1047, 140, 70, W_SINE) };
-static const note_t SND_MOVE[]     = { N(110, 260, 220, 55, W_TRI),
-                                       N(260, 180, 160, 40, W_TRI) };
-static const note_t SND_BEEP[]     = { N(1760, 1760, 45, 45, W_SINE) };
-static const note_t SND_ARRIVE[]   = { N(988, 988, 170, 80, W_SINE),
-                                       N(0, 0, 25, 0, W_SINE),
-                                       N(740, 740, 320, 80, W_SINE) };
-static const note_t SND_DOOR_OPEN[] = { N(300, 1400, 170, 35, W_NOISE),
-                                        N(0, 0, 30, 0, W_SINE),
-                                        N(1319, 1319, 120, 55, W_SINE) };
-static const note_t SND_DOOR_CLOSE[] = { N(1319, 1319, 90, 50, W_SINE),
-                                         N(1400, 300, 190, 35, W_NOISE),
-                                         N(180, 120, 90, 55, W_TRI) };
-static const note_t SND_ERROR[]    = { N(190, 190, 120, 80, W_SQUARE),
+/* --- Sonidos de ascensor ------------------------------------------- */
+/* boton de piso/llamada: pitido electronico corto */
+static const note_t SND_PRESS[]    = { N(2000, 2000, 70, 55, W_SINE) };
+/* llamada SUBIR / BAJAR: pitido + campanita ascendente / descendente */
+static const note_t SND_CALL_UP[]  = { N(1700, 1700, 45, 50, W_SINE),
+                                       N(0, 0, 20, 0, W_SINE),
+                                       N(1319, 1319, 220, 60, W_BELL) };
+static const note_t SND_CALL_DN[]  = { N(1700, 1700, 45, 50, W_SINE),
+                                       N(0, 0, 20, 0, W_SINE),
+                                       N(988, 988, 220, 60, W_BELL) };
+/* parada aceptada en la ruta */
+static const note_t SND_ACCEPT[]   = { N(1568, 1568, 260, 55, W_BELL) };
+/* arranque: rele + zumbido de motor que acelera y se estabiliza */
+static const note_t SND_MOVE[]     = { N(320, 170, 45, 65, W_THUMP),
+                                       N(120, 200, 520, 50, W_HUM),
+                                       N(200, 205, 260, 40, W_HUM) };
+/* trayecto: zumbido continuo (se repite mientras la cabina se mueve) */
+static const note_t SND_RUN[]      = { N(200, 205, 480, 38, W_HUM) };
+/* pasa por un piso: "bip" suave de campana */
+static const note_t SND_BEEP[]     = { N(1760, 1760, 230, 42, W_BELL) };
+/* llegada: gong "ding-dong" clasico (mi - do) */
+static const note_t SND_ARRIVE[]   = { N(1319, 1319, 520, 78, W_BELL),
+                                       N(0, 0, 40, 0, W_SINE),
+                                       N(988, 988, 700, 78, W_BELL) };
+/* llegada subiendo: un "ding"; bajando: dos "ding" */
+static const note_t SND_ARRIVE_UP[] = { N(1319, 1319, 750, 80, W_BELL) };
+static const note_t SND_ARRIVE_DN[] = { N(1319, 1319, 380, 80, W_BELL),
+                                        N(0, 0, 60, 0, W_SINE),
+                                        N(1319, 1319, 700, 80, W_BELL) };
+/* puertas: mecanismo + tope; al abrir termina con golpe suave */
+static const note_t SND_DOOR_OPEN[] = { N(320, 170, 50, 65, W_THUMP),
+                                        N(210, 330, 330, 38, W_WHIRR),
+                                        N(220, 120, 120, 65, W_THUMP) };
+static const note_t SND_DOOR_CLOSE[] = { N(320, 170, 50, 60, W_THUMP),
+                                         N(330, 200, 340, 38, W_WHIRR),
+                                         N(240, 120, 150, 70, W_THUMP) };
+/* zumbador de error / sobrecarga */
+static const note_t SND_ERROR[]    = { N(220, 220, 160, 80, W_SQUARE),
                                        N(0, 0, 50, 0, W_SINE),
-                                       N(150, 150, 220, 80, W_SQUARE) };
-static const note_t SND_LIMIT[]    = { N(1175, 1175, 90, 70, W_SINE),
-                                       N(988, 988, 90, 70, W_SINE),
-                                       N(784, 784, 90, 70, W_SINE),
-                                       N(392, 392, 240, 75, W_SQUARE) };
+                                       N(220, 220, 260, 80, W_SQUARE) };
+static const note_t SND_LIMIT[]    = { N(220, 220, 140, 80, W_SQUARE),
+                                       N(0, 0, 70, 0, W_SINE),
+                                       N(220, 220, 140, 80, W_SQUARE),
+                                       N(0, 0, 70, 0, W_SINE),
+                                       N(220, 220, 300, 80, W_SQUARE) };
+
 static const note_t SND_SWIPE_L[]  = { N(500, 1800, 130, 30, W_NOISE),
                                        N(700, 1300, 90, 40, W_SINE) };
 static const note_t SND_SWIPE_R[]  = { N(1800, 500, 130, 30, W_NOISE),
@@ -177,6 +193,9 @@ static const fixed_t s_fixed[AUDIO_SND_COUNT] = {
     [AUDIO_SND_BOOT]       = FX(SND_BOOT),
     [AUDIO_SND_PLUS]       = FX(SND_PLUS),
     [AUDIO_SND_MINUS]      = FX(SND_MINUS),
+    [AUDIO_SND_RUN]        = FX(SND_RUN),
+    [AUDIO_SND_ARRIVE_UP]  = FX(SND_ARRIVE_UP),
+    [AUDIO_SND_ARRIVE_DOWN] = FX(SND_ARRIVE_DN),
 };
 
 /* ------------------------------------------------------------------ */
@@ -214,6 +233,35 @@ static void play_note(const note_t *nt, int16_t *buf)
                     s = s * 5 / 8;
                     break;
                 }
+                case W_BELL: {
+                    /* campana: fundamental + parciales inarmonicos (2.76x, 5.4x) */
+                    uint32_t p2 = (uint32_t)(((uint64_t)phase * 2756) / 1000);
+                    uint32_t p3 = (uint32_t)(((uint64_t)phase * 5404) / 1000);
+                    s = s_sine[(phase >> 24) & 255] +
+                        s_sine[(p2 >> 24) & 255] * 45 / 100 +
+                        s_sine[(p3 >> 24) & 255] / 5;
+                    s = s * 6 / 10;
+                    break;
+                }
+                case W_THUMP:
+                    s = s_sine[(phase >> 24) & 255];
+                    break;
+                case W_HUM: {
+                    /* zumbido de motor: triangular + octava + 3er armonico */
+                    int32_t a = (int32_t)(phase >> 16) - 32768;
+                    int32_t b2 = (int32_t)((phase << 1) >> 16) - 32768;
+                    a = (a < 0 ? -a : a) - 16384;
+                    b2 = (b2 < 0 ? -b2 : b2) - 16384;
+                    s = (a * 5 / 8) + (b2 / 4) + s_sine[((phase * 3) >> 24) & 255] / 6;
+                    break;
+                }
+                case W_WHIRR: {
+                    /* mecanismo de puertas: diente de sierra suave + ruido */
+                    int32_t saw = (int32_t)(phase >> 17) - 16384;
+                    rng = rng * 1664525u + 1013904223u;
+                    s = saw / 2 + ((int32_t)(rng >> 19) - 8192) / 2;
+                    break;
+                }
                 case W_NOISE:
                     rng = rng * 1664525u + 1013904223u;
                     s = ((int32_t)(rng >> 17) - 16384) / 2;
@@ -227,11 +275,15 @@ static void play_note(const note_t *nt, int16_t *buf)
                 if (pos < attack) {
                     env = (int32_t)(256 * pos / attack);
                 }
-                if (pos + release > total) {
+                if (nt->wave == W_BELL || nt->wave == W_THUMP) {
+                    int64_t rem = (int64_t)(total - pos);
+                    env = env * (int32_t)(rem * rem * 256 / ((int64_t)total * total)) / 256;
+                } else if (pos + release > total) {
                     env = env * (int32_t)(total - pos) / (int32_t)release;
                 }
                 s = s * env / 256;
-                s = s * nt->vol / 100 * (s_tone_full ? 100 : s_volume) / 100;
+                s = s * (nt->vol > 70 ? 70 : nt->vol) / 100 *
+                    (s_tone_full ? 100 : s_volume) / 100;
             }
             if (s > 32767) s = 32767;
             if (s < -32768) s = -32768;
@@ -385,13 +437,13 @@ void audio_play_floor(audio_snd_t kind, int floor)
     switch (kind) {
     case AUDIO_SND_BEEP:      /* "ding" corto al pasar por un piso */
         job.n = 1;
-        job.notes[0] = (note_t)N(f * 2 > 3800 ? 3800 : f * 2, f * 2 > 3800 ? 3800 : f * 2, 55, 50, W_SINE);
+        job.notes[0] = (note_t)N(f * 2 > 3800 ? 3800 : f * 2, f * 2 > 3800 ? 3800 : f * 2, 230, 45, W_BELL);
         break;
     case AUDIO_SND_ARRIVE:    /* llegada: campanilla en la nota del piso */
         job.n = 3;
-        job.notes[0] = (note_t)N(f, f, 160, 80, W_SINE);
-        job.notes[1] = (note_t)N(0, 0, 20, 0, W_SINE);
-        job.notes[2] = (note_t)N(f * 3 / 4, f * 3 / 4, 300, 80, W_SINE);
+        job.notes[0] = (note_t)N(f, f, 420, 80, W_BELL);
+        job.notes[1] = (note_t)N(0, 0, 30, 0, W_SINE);
+        job.notes[2] = (note_t)N(f * 3 / 4, f * 3 / 4, 600, 80, W_BELL);
         break;
     default:                  /* seleccion de piso */
         job.n = 2;
