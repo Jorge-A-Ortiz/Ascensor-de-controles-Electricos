@@ -18,6 +18,7 @@
 
 #include "driver/gpio.h"
 #include "driver/i2s_std.h"
+#include "esp_timer.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -52,6 +53,9 @@ static i2s_chan_handle_t s_tx;
 static QueueHandle_t s_queue;
 static volatile uint8_t s_volume = 70;
 static bool s_ready;
+static audio_stats_t s_stats;
+static volatile int s_pa_force = -1;
+static volatile bool s_tone_full;
 
 static int16_t s_sine[256];
 
@@ -199,7 +203,7 @@ static void play_note(const note_t *nt, int16_t *buf)
                 phase += (uint32_t)(f * (4294967296.0f / AUDIO_RATE));
                 switch (nt->wave) {
                 case W_SQUARE:
-                    s = (phase & 0x80000000u) ? 9000 : -9000;
+                    s = (phase & 0x80000000u) ? 18000 : -18000;
                     break;
                 case W_TRI: {
                     int32_t p = (int32_t)(phase >> 16) - 32768;
@@ -224,15 +228,22 @@ static void play_note(const note_t *nt, int16_t *buf)
                     env = env * (int32_t)(total - pos) / (int32_t)release;
                 }
                 s = s * env / 256;
-                s = s * nt->vol / 100 * s_volume / 100;
+                s = s * nt->vol / 100 * (s_tone_full ? 100 : s_volume) / 100;
             }
             if (s > 32767) s = 32767;
             if (s < -32768) s = -32768;
             buf[2 * i]     = (int16_t)s;
             buf[2 * i + 1] = (int16_t)s;
+            if ((s < 0 ? -s : s) > s_stats.peak) {
+                s_stats.peak = s < 0 ? -s : s;
+            }
         }
         size_t written = 0;
-        i2s_channel_write(s_tx, buf, n * 4, &written, 200);
+        if (i2s_channel_write(s_tx, buf, n * 4, &written, 200) != ESP_OK ||
+            written != n * 4) {
+            s_stats.write_errors++;
+        }
+        s_stats.frames += written / 4;
         done += n;
     }
 }
@@ -250,17 +261,21 @@ static void audio_task(void *arg)
         if (s_volume == 0) {
             continue;
         }
+        int64_t t0 = esp_timer_get_time();
         gpio_set_level(AUDIO_PA_GPIO, 1);
         for (uint8_t i = 0; i < job.n; i++) {
             play_note(&job.notes[i], buf);
         }
+        s_stats.jobs++;
+        s_stats.last_job_ms = (uint32_t)((esp_timer_get_time() - t0) / 1000);
         /* cola vacia: rellena con silencio y apaga el amplificador */
         memset(buf, 0, sizeof(buf));
         size_t w = 0;
         i2s_channel_write(s_tx, buf, sizeof(buf), &w, 100);
-        if (uxQueueMessagesWaiting(s_queue) == 0) {
+        if (uxQueueMessagesWaiting(s_queue) == 0 && s_pa_force < 0) {
             gpio_set_level(AUDIO_PA_GPIO, 0);
         }
+        s_tone_full = false;
     }
 }
 
@@ -271,13 +286,13 @@ static void audio_task(void *arg)
 esp_err_t audio_init(uint8_t volume)
 {
     for (int i = 0; i < 256; i++) {
-        s_sine[i] = (int16_t)(sinf(2.0f * 3.14159265f * i / 256.0f) * 12000.0f);
+        s_sine[i] = (int16_t)(sinf(2.0f * 3.14159265f * i / 256.0f) * 26000.0f);
     }
     s_volume = volume > 100 ? 100 : volume;
 
     gpio_config_t pa = {
         .pin_bit_mask = 1ULL << AUDIO_PA_GPIO,
-        .mode = GPIO_MODE_OUTPUT,
+        .mode = GPIO_MODE_INPUT_OUTPUT,
     };
     esp_err_t err = gpio_config(&pa);
     if (err != ESP_OK) {
@@ -344,6 +359,7 @@ static void enqueue(const job_t *job, bool important)
         return;
     }
     if (!important && uxQueueMessagesWaiting(s_queue) >= 3) {
+        s_stats.dropped++;
         return;   /* no acumular clics si el audio va atrasado */
     }
     xQueueSend(s_queue, job, 0);
@@ -387,4 +403,29 @@ void audio_play_floor(audio_snd_t kind, int floor)
         break;
     }
     enqueue(&job, kind != AUDIO_SND_BEEP);
+}
+
+void audio_get_stats(audio_stats_t *out)
+{
+    *out = s_stats;
+    out->pa_level = gpio_get_level(AUDIO_PA_GPIO);
+}
+
+void audio_tone(uint16_t hz, uint16_t ms)
+{
+    if (!s_ready) {
+        return;
+    }
+    job_t job = { .n = 1 };
+    job.notes[0] = (note_t)N(hz, hz, ms, 100, W_SINE);
+    s_tone_full = true;
+    xQueueSend(s_queue, &job, 0);
+}
+
+void audio_pa_force(int level)
+{
+    s_pa_force = level;
+    if (level >= 0) {
+        gpio_set_level(AUDIO_PA_GPIO, level ? 1 : 0);
+    }
 }

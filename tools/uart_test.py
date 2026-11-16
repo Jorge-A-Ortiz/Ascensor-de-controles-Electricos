@@ -41,7 +41,7 @@ def cmd(line, wait=0.35):
         out += ser.read(4096).decode("utf8", "replace")
     # solo lineas de respuesta (prefijos conocidos), sin logs
     keep = [l.strip() for l in out.splitlines()
-            if re.match(r"^(OK|ERR|ST|UI|GPIO|RULES|PERF|HEAP)\b", l.strip())]
+            if re.match(r"^(OK|ERR|ST|UI|GPIO|RULES|PERF|HEAP|AUDIO)\b", l.strip())]
     return keep
 
 
@@ -213,6 +213,25 @@ cmd("click back")
 cmd("click del 0")
 r = cmd("rules")
 check("bloque eliminado", r and "count=0" in r[0], r)
+
+print("== Audio: el I2S reproduce de verdad (reloj, pines, amplificador) ==")
+a0 = kv((cmd("audiostat") or [""])[0])
+cmd("tone 1000 600")
+time.sleep(0.2)
+mid = kv((cmd("audiostat") or [""])[0])
+check("el amplificador (GPIO30) se activa mientras suena", mid.get("pa") == "1", mid)
+time.sleep(0.9)
+a1 = kv((cmd("audiostat") or [""])[0])
+check("se reproduce una secuencia mas", int(a1.get("jobs", 0)) == int(a0.get("jobs", 0)) + 1, (a0, a1))
+check("sin errores de escritura I2S", a1.get("write_errors") == "0", a1)
+check("duracion real = 600 ms (reloj I2S a 16 kHz)", 570 <= int(a1.get("last_job_ms", 0)) <= 680, a1)
+check("el amplificador se apaga al terminar", a1.get("pa") == "0", a1)
+r = cmd("sampleio", 1.2)
+edges = dict(re.findall(r"(\w+)\(GPIO\d+\)=(\d+)", r[0])) if r else {}
+check("LRCK/WS (GPIO21) conmuta a ~16 kHz (630-650 flancos en 20 ms)",
+      600 <= int(edges.get("WS", 0)) <= 680, r)
+check("BCLK (GPIO22) y DOUT (GPIO23) con actividad",
+      int(edges.get("BCLK", 0)) > 500 and int(edges.get("DOUT", 0)) > 500, r)
 
 print("\n== Resumen ==")
 ok = sum(1 for _, p, _ in results if p)

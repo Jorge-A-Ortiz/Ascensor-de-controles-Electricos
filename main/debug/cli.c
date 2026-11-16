@@ -193,6 +193,45 @@ static void handle_line(char *line)
         } else {
             printf("ERR sound id 0..%d\n", AUDIO_SND_COUNT - 1);
         }
+    } else if (!strcmp(c, "tone") && argc >= 3) {
+        audio_tone((uint16_t)atoi(argv[1]), (uint16_t)atoi(argv[2]));
+        printf("OK tone %s Hz %s ms\n", argv[1], argv[2]);
+    } else if (!strcmp(c, "pa") && argc >= 2) {
+        audio_pa_force(atoi(argv[1]));
+        printf("OK pa %s\n", argv[1]);
+    } else if (!strcmp(c, "audiostat")) {
+        audio_stats_t a;
+        audio_get_stats(&a);
+        printf("AUDIO jobs=%lu frames=%lu write_errors=%lu last_job_ms=%lu dropped=%lu pa=%d peak=%d vol=%u\n",
+               (unsigned long)a.jobs, (unsigned long)a.frames, (unsigned long)a.write_errors,
+               (unsigned long)a.last_job_ms, (unsigned long)a.dropped, a.pa_level, a.peak,
+               audio_get_volume());
+    } else if (!strcmp(c, "sampleio")) {
+        static const int pins[3] = { 22, 21, 23 };   /* BCLK, WS, DOUT */
+        static const char *names[3] = { "BCLK", "WS", "DOUT" };
+        int edges[3] = { 0, 0, 0 };
+        int last[3];
+        for (int i = 0; i < 3; i++) {
+            gpio_input_enable(pins[i]);
+            last[i] = gpio_get_level(pins[i]);
+        }
+        audio_tone(1000, 300);
+        vTaskDelay(pdMS_TO_TICKS(60));
+        int64_t t0 = esp_timer_get_time();
+        while (esp_timer_get_time() - t0 < 20000) {
+            for (int i = 0; i < 3; i++) {
+                int v = gpio_get_level(pins[i]);
+                if (v != last[i]) {
+                    edges[i]++;
+                    last[i] = v;
+                }
+            }
+        }
+        printf("AUDIO sampleio 20ms:");
+        for (int i = 0; i < 3; i++) {
+            printf(" %s(GPIO%d)=%d", names[i], pins[i], edges[i]);
+        }
+        printf(" flancos\n");
     } else if (!strcmp(c, "vol") && argc >= 2) {
         audio_set_volume((uint8_t)atoi(argv[1]));
         printf("OK vol %u\n", audio_get_volume());

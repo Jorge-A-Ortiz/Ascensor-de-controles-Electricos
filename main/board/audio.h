@@ -40,6 +40,22 @@ typedef enum {
 
 esp_err_t audio_init(uint8_t volume);
 
+typedef struct {
+    uint32_t jobs;          /* secuencias reproducidas */
+    uint32_t frames;        /* muestras estereo escritas al I2S */
+    uint32_t write_errors;  /* escrituras I2S fallidas */
+    uint32_t last_job_ms;   /* duracion real de la ultima secuencia */
+    uint32_t dropped;       /* sonidos descartados por cola llena */
+    int      pa_level;      /* nivel del GPIO de habilitacion del amplificador */
+    int      peak;          /* pico de la ultima muestra generada (0..32767) */
+} audio_stats_t;
+
+void audio_get_stats(audio_stats_t *out);
+
+/* Tono de prueba: onda sinusoidal a volumen pleno (ignora el volumen de usuario) */
+void audio_tone(uint16_t hz, uint16_t ms);
+void audio_pa_force(int level);   /* -1 = automatico */
+
 void audio_set_volume(uint8_t volume);
 uint8_t audio_get_volume(void);
 
