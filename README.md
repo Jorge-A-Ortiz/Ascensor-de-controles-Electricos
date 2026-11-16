@@ -32,18 +32,24 @@ Tres pantallas verticales que se cambian deslizando:
 - Avisa cuando el piso ya está en el recorrido o cuando la cabina ya está ahí.
 
 ### 3. Ascensor / Técnica
+
+Cambios de programación y revisión de funcionamiento real:
+[Programación y funcionamiento](docs/PROGRAMACION_Y_FUNCIONAMIENTO.md).
+
 - **Cantidad de pisos** (2 a 16).
-- **Origen de posición**: `MODO DEMO` (simulado) o `GPIO REALES` (sensores de piso).
+- **Posición**: sensores GPIO exclusivamente; modo demo eliminado.
+- **Ver pisos**: vista completa de sensores, posición y llamadas interiores/exteriores.
 - **Regla por piso**: GPIO del sensor + nivel activo (0 o 1).
 - **Programación por bloques**: hasta 32 reglas del tipo
-  `SI entrada digital [GPIO] ES IGUAL A 0/1 → ENTONCES salida digital [GPIO] ESCRIBIR 0/1`,
+  con condiciones GPIO, botones virtuales, piso, dirección, puertas y pedidos;
+  acciones de salida GPIO o llamadas interiores/exteriores,
   con nivel de reposo seguro por bloque.
 
 Validaciones incluidas (las mismas que anunciaba el firmware original):
 
 - Un GPIO no puede ser entrada y salida a la vez.
 - Un GPIO de salida debe tener un único nivel de reposo.
-- Dos bloques no pueden ordenar valores contrarios a la misma salida.
+- Una salida compartida combina condiciones por OR, con valor activo y reposo coherentes.
 - Un GPIO solo puede identificar un piso.
 - Solo se permiten los GPIO del conector de usuario; los del panel están reservados.
 - Las entradas se filtran 30 ms.
@@ -153,3 +159,10 @@ cabeceras de aplicación, tabla de particiones, NVS y strings clasificados:
 ```bash
 python tools/analizar_firmware.py firmware/backup_esp32p4_16MB.bin
 ```
+
+## Pendientes
+
+- [ ] **Programación exterior por bloques.** Configurar desde el editor las llamadas SUBIR y BAJAR por piso y sus acciones.
+- [ ] **Giro de pantalla.** Añadir un botón siempre visible que gire 90° entre vertical y horizontal. Adaptar el diseño y las coordenadas táctiles a ambas orientaciones.
+- [ ] **Pestaña de animaciones.** Integrar las animaciones del [simulador AscensorControl](https://github.com/Jorge-A-Ortiz/AscensorControl) en una cuarta pestaña de la CrowPanel.
+- [ ] **Indicador físico de puertas.** Leer la señal del PLC o de los sensores e indicar **Abriendo** y **Cerrando**. Definir pines y niveles según el cableado.

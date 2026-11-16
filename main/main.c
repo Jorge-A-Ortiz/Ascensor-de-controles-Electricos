@@ -112,14 +112,20 @@ static void on_elevator_event(const elevator_event_t *ev, void *ctx)
 static void motion_tick(void *arg)
 {
     (void)arg;
-    elevator_tick();
-    ui_refresh();
+    if (board_lock(1)) {
+        elevator_tick();
+        ui_refresh();
+        board_unlock();
+    }
 }
 
 static void rules_tick_cb(void *arg)
 {
     (void)arg;
-    rules_tick();
+    if (board_lock(1)) {
+        rules_tick();
+        board_unlock();
+    }
 }
 
 void app_main(void)
@@ -174,8 +180,8 @@ void app_main(void)
     elevator_state_t st;
     elevator_get_state(&st);
 
-    ESP_LOGI(TAG, "Interfaz lista: CrowPanel P4 V1.0, vertical %dx%d, %u pisos.",
+    ESP_LOGI(TAG, "Interfaz lista: CrowPanel P4, vertical %dx%d, %u pisos.",
              LCD_H_RES, LCD_V_RES, st.floors);
     ESP_LOGI(TAG, "Origen de posicion: %s",
-             st.demo_mode ? "MODO DEMO" : "GPIO REALES");
+             "GPIO REALES");
 }

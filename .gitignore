@@ -1,5 +1,7 @@
 # Build
 build/
+/build-local/
+/build-native/
 sdkconfig
 sdkconfig.old
 dependencies.lock

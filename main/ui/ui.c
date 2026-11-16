@@ -90,6 +90,7 @@ static void init_fonts(void)
 
 static lv_obj_t *s_scr[3];
 static lv_obj_t *s_scr_blocks;
+static lv_obj_t *s_scr_overview, *s_overview_rows;
 static int       s_cur_scr;
 
 /* Exterior */
@@ -129,6 +130,7 @@ static lv_obj_t *s_b_prev, *s_b_next, *s_b_up, *s_b_down;
 static lv_obj_t *s_b_minus, *s_b_plus, *s_b_mode, *s_b_edit, *s_b_back, *s_b_add;
 
 static uint8_t s_user_floor = 1;
+
 static elevator_state_t s_last_state;
 
 /* ------------------------------------------------------------------ */
@@ -577,12 +579,12 @@ static void refresh_tech_labels(void)
         snprintf(buf, sizeof(buf), "%u", app->cfg.floors);
         lv_label_set_text(s_tec_count, buf);
     }
-    const char *mode = app->cfg.demo_mode ? "MODO DEMO" : "GPIO REALES";
+    const char *mode = "GPIO REALES";
     if (s_tec_mode_lbl != NULL) {
         lv_label_set_text(s_tec_mode_lbl, mode);
     }
     if (s_tec_mode_btn_lbl != NULL) {
-        lv_label_set_text(s_tec_mode_btn_lbl, mode);
+        lv_label_set_text(s_tec_mode_btn_lbl, "VER PISOS");
     }
     if (s_tec_dd_gpio != NULL) {
         lv_dropdown_set_selected(
@@ -601,9 +603,7 @@ static void refresh_tech_labels(void)
         bool has_gpio = app->cfg.floor_gpio[s_sel_floor - 1] != 0xFF;
         elevator_state_t st;
         elevator_get_state(&st);
-        if (app->cfg.demo_mode) {
-            snprintf(buf, sizeof(buf), "Lectura: modo demo");
-        } else if (st.position_known) {
+        if (st.position_known) {
             snprintf(buf, sizeof(buf), "Piso detectado: %u · %s",
                      st.current_floor, has_gpio ? "GPIO activo" : "sin GPIO");
         } else {
@@ -624,14 +624,10 @@ static void tec_floors_cb(lv_event_t *e)
     intptr_t id = (intptr_t)lv_event_get_user_data(e);
     app_state_t *app = app_state();
 
-    if (!app->cfg.demo_mode) {
+    elevator_state_t state; elevator_get_state(&state);
+    if (state.moving || app->cfg.blocks_enabled) {
         audio_play(AUDIO_SND_ERROR);
-        tec_note("Desactiva GPIO antes de cambiar los pisos.");
-        return;
-    }
-    if (app->cfg.blocks_enabled) {
-        audio_play(AUDIO_SND_ERROR);
-        tec_note("Desactiva los bloques antes de usar sensores de piso.");
+        tec_note("Deten la cabina y desactiva bloques antes de configurar.");
         return;
     }
     if (id == ID_MINUS && app->cfg.floors > ELEVATOR_MIN_FLOORS) {
@@ -656,31 +652,16 @@ static void tec_floors_cb(lv_event_t *e)
     ui_refresh();
 }
 
+static void overview_back_cb(lv_event_t *e)
+{
+    (void)e;
+    lv_scr_load(s_scr[2]);
+}
+
 static void tec_mode_cb(lv_event_t *e)
 {
     (void)e;
-    app_state_t *app = app_state();
-
-    if (app->cfg.demo_mode) {
-        bool any = false;
-        for (int i = 0; i < app->cfg.floors; i++) {
-            if (app->cfg.floor_gpio[i] != 0xFF) {
-                any = true;
-            }
-        }
-        if (!any) {
-            audio_play(AUDIO_SND_ERROR);
-            tec_note("Asigna al menos un GPIO a un piso.");
-            return;
-        }
-    }
-    app->cfg.demo_mode = !app->cfg.demo_mode;
-    audio_play(app->cfg.demo_mode ? AUDIO_SND_OFF : AUDIO_SND_ON);
-    app_apply_config();
-    tec_note(app->cfg.demo_mode ? "Demo activa: posición simulada."
-                                : "GPIO reales activos. Filtrado de 30 ms.");
-    refresh_tech_labels();
-    ui_refresh();
+    lv_scr_load(s_scr_overview);
 }
 
 static void tec_floor_sel_cb(lv_event_t *e)
@@ -694,14 +675,14 @@ static void tec_floor_sel_cb(lv_event_t *e)
 static void tec_gpio_cb(lv_event_t *e)
 {
     app_state_t *app = app_state();
+    elevator_state_t state; elevator_get_state(&state);
+    if (state.moving || rules_enabled()) {
+        tec_note("Deten la cabina y desactiva bloques antes de configurar.");
+        refresh_tech_labels(); return;
+    }
+
     int sel = (int)lv_dropdown_get_selected(lv_event_get_target(e));
 
-    if (!app->cfg.demo_mode) {
-        audio_play(AUDIO_SND_ERROR);
-        tec_note("Cambia a DEMO antes de editar las entradas.");
-        refresh_tech_labels();
-        return;
-    }
     uint8_t gpio = (sel == 0) ? 0xFF : (uint8_t)s_gpios[sel - 1];
     for (int i = 0; i < app->cfg.floors; i++) {
         if (i != (s_sel_floor - 1) && gpio != 0xFF &&
@@ -722,12 +703,12 @@ static void tec_gpio_cb(lv_event_t *e)
 static void tec_level_cb(lv_event_t *e)
 {
     app_state_t *app = app_state();
-    if (!app->cfg.demo_mode) {
-        audio_play(AUDIO_SND_ERROR);
-        tec_note("Cambia a DEMO antes de editar las entradas.");
-        refresh_tech_labels();
-        return;
+    elevator_state_t state; elevator_get_state(&state);
+    if (state.moving || rules_enabled()) {
+        tec_note("Deten la cabina y desactiva bloques antes de configurar.");
+        refresh_tech_labels(); return;
     }
+
     app->cfg.floor_level[s_sel_floor - 1] =
         (uint8_t)lv_dropdown_get_selected(lv_event_get_target(e));
     app_apply_config();
@@ -753,7 +734,7 @@ static void create_tecnica(lv_obj_t *scr)
                LV_TEXT_ALIGN_LEFT);
     s_tec_mode_lbl = make_label(p, 24, 182, 180, 32, "", &F30, TEC_TEXT,
                                 LV_TEXT_ALIGN_LEFT);
-    s_b_mode = make_button(p, 248, 150, 230, 60, "MODO DEMO", tec_mode_cb, ID_MODE,
+    s_b_mode = make_button(p, 248, 150, 230, 60, "SENSORES", tec_mode_cb, ID_MODE,
                 &s_tec_mode_btn_lbl);
 
     make_label(scr, 44, 453, 290, 36, "Regla por piso", &F30, TEC_TEXT,
@@ -826,11 +807,8 @@ static void open_blocks_cb(lv_event_t *e)
 
 static bool blocks_editable(void)
 {
-    if (!app_state()->cfg.demo_mode) {
-        audio_play(AUDIO_SND_ERROR);
-        ui_show_message("Bloques", "Cambia a DEMO antes de editar bloques.");
-        return false;
-    }
+    elevator_state_t st; elevator_get_state(&st);
+    if (st.moving) { ui_show_message("Cabina en marcha", "Deten la cabina antes de editar."); return false; }
     if (app_state()->cfg.blocks_enabled) {
         audio_play(AUDIO_SND_ERROR);
         ui_show_message("Reglas activas",
@@ -888,6 +866,23 @@ static void blk_delete_cb(lv_event_t *e)
     refresh_tech_labels();
 }
 
+enum {
+    BLK_IN_GPIO, BLK_IN_LEVEL, BLK_OUT_GPIO, BLK_OUT_LEVEL, BLK_REST_LEVEL,
+    BLK_SOURCE, BLK_FLOOR, BLK_ACTION, BLK_ACTION_FLOOR, BLK_MODE
+};
+
+static const char *const block_modes[] = {
+    "Programaci\xC3\xB3n tipo GPIO",
+    "Programaci\xC3\xB3n tipo Bot\xC3\xB3n",
+    "Condici\xC3\xB3n de ascensor",
+};
+
+static int block_mode(const rule_block_t *block)
+{
+    if (block->source == RULE_GPIO) return 0;
+    return block->source <= RULE_BUTTON_CABIN ? 1 : 2;
+}
+
 static void blk_dd_cb(lv_event_t *e)
 {
     uint32_t packed = (uint32_t)(uintptr_t)lv_event_get_user_data(e);
@@ -899,18 +894,42 @@ static void blk_dd_cb(lv_event_t *e)
     if (idx >= app->block_count) {
         return;
     }
+    if (!blocks_editable()) { lv_async_call(rebuild_block_rows_async, NULL); return; }
     rule_block_t *b = &app->blocks[idx];
 
+    rule_block_t previous = *b;
+    bool rebuild = false;
     switch (field) {
-    case 0: b->in_gpio    = (sel == 0) ? 0xFF : (uint8_t)s_gpios[sel - 1]; break;
-    case 1: b->in_level   = (uint8_t)sel; break;
-    case 2: b->out_gpio   = (sel == 0) ? 0xFF : (uint8_t)s_gpios[sel - 1]; break;
-    case 3: b->out_level  = (uint8_t)sel; break;
-    case 4: b->rest_level = (uint8_t)sel; break;
-    default: break;
+    case BLK_IN_GPIO: b->in_gpio = sel == 0 ? 0xFF : (uint8_t)s_gpios[sel - 1]; break;
+    case BLK_IN_LEVEL: b->in_level = (uint8_t)sel; break;
+    case BLK_OUT_GPIO: b->out_gpio = sel == 0 ? 0xFF : (uint8_t)s_gpios[sel - 1]; break;
+    case BLK_OUT_LEVEL: b->out_level = (uint8_t)sel; break;
+    case BLK_REST_LEVEL: b->rest_level = (uint8_t)sel; break;
+    case BLK_ACTION:
+        b->action = (uint8_t)sel;
+        rebuild = true;
+        break;
+    case BLK_ACTION_FLOOR: b->action_floor = (uint8_t)sel; break;
+    case BLK_SOURCE:
+        b->source = (uint8_t)(sel + (block_mode(b) == 1 ? RULE_BUTTON_UP : RULE_AT_FLOOR));
+        break;
+    case BLK_FLOOR: b->floor = (uint8_t)sel; break;
+    case BLK_MODE:
+        if (sel == block_mode(b)) return;
+        b->source = sel == 0 ? RULE_GPIO : sel == 1 ? RULE_BUTTON_UP : RULE_AT_FLOOR;
+        b->in_level = 1;
+        rebuild = true;
+        break;
+    default: return;
     }
-    app_save_blocks();
-    audio_play(AUDIO_SND_OK);
+    if (app_save_blocks() != ESP_OK) {
+        *b = previous;
+        ui_show_message("Error de guardado", "No se pudo guardar el bloque.");
+        rebuild = true;
+    } else {
+        audio_play(AUDIO_SND_OK);
+    }
+    if (rebuild) lv_async_call(rebuild_block_rows_async, NULL);
 }
 
 static lv_obj_t *blk_dropdown(lv_obj_t *parent, const char *options,
@@ -919,6 +938,7 @@ static lv_obj_t *blk_dropdown(lv_obj_t *parent, const char *options,
     lv_obj_t *dd = lv_dropdown_create(parent);
     lv_dropdown_set_options(dd, options);
     lv_dropdown_set_selected(dd, selected);
+    lv_obj_set_user_data(dd, (void *)(uintptr_t)field);
     lv_obj_set_width(dd, w);
     style_dropdown(dd, &F21);
     lv_obj_add_event_cb(dd, blk_dd_cb, LV_EVENT_VALUE_CHANGED,
@@ -940,6 +960,7 @@ static void rebuild_block_rows(void)
     if (s_blk_list == NULL) {
         return;
     }
+    lv_coord_t scroll_y = lv_obj_get_scroll_y(s_blk_list);
     lv_obj_clean(s_blk_list);
     app_state_t *app = app_state();
 
@@ -976,14 +997,47 @@ static void rebuild_block_rows(void)
         lv_obj_set_style_pad_row(row, 8, 0);
         lv_obj_set_style_pad_column(row, 8, 0);
 
-        blk_text(row, "SI", TEC_MUTED);
-        blk_dropdown(row, s_gpio_options, gpio_to_index(b->in_gpio), 170, i, 0);
-        blk_dropdown(row, "ES IGUAL A 0\nES IGUAL A 1", b->in_level, 190, i, 1);
-        blk_text(row, "ENTONCES", TEC_MUTED);
-        blk_dropdown(row, s_gpio_options, gpio_to_index(b->out_gpio), 170, i, 2);
-        blk_dropdown(row, "ESCRIBIR 0\nESCRIBIR 1", b->out_level, 190, i, 3);
-        blk_text(row, "REPOSO", TEC_MUTED);
-        blk_dropdown(row, "= 0\n= 1", b->rest_level, 110, i, 4);
+        int mode = block_mode(b);
+        char modes[128];
+        snprintf(modes, sizeof(modes), "%s\n%s%s%s", block_modes[0], block_modes[1],
+                 mode == 2 ? "\n" : "", mode == 2 ? block_modes[2] : "");
+        blk_dropdown(row, modes, mode, 460, i, BLK_MODE);
+
+        char floors[180] = "Cualquier piso";
+        for (int f = 1; f <= app->cfg.floors; f++) {
+            char item[12];
+            snprintf(item, sizeof(item), "\nPiso %d", f);
+            strncat(floors, item, sizeof(floors) - strlen(floors) - 1);
+        }
+
+        lv_obj_add_flag(blk_text(row, "SI", TEC_MUTED), LV_OBJ_FLAG_FLEX_IN_NEW_TRACK);
+        if (mode == 0) {
+            blk_dropdown(row, s_gpio_options, gpio_to_index(b->in_gpio), 170, i, BLK_IN_GPIO);
+            blk_dropdown(row, "ES IGUAL A 0\nES IGUAL A 1", b->in_level, 190, i, BLK_IN_LEVEL);
+        } else {
+            const char *sources = mode == 1 ? "SUBIR\nBAJAR\nCABINA" :
+                "En piso\nSubiendo\nBajando\nPuertas abiertas\nLlamada pendiente";
+            blk_dropdown(row, sources,
+                         b->source - (mode == 1 ? RULE_BUTTON_UP : RULE_AT_FLOOR),
+                         235, i, BLK_SOURCE);
+            blk_dropdown(row, floors, b->floor, 185, i, BLK_FLOOR);
+            blk_dropdown(row, mode == 1 ? "Sin pulso\nAl pulsar" :
+                         "Condicion falsa\nCondicion verdadera", b->in_level, 220, i, BLK_IN_LEVEL);
+        }
+
+        lv_obj_add_flag(blk_text(row, "ENTONCES", TEC_MUTED), LV_OBJ_FLAG_FLEX_IN_NEW_TRACK);
+        blk_dropdown(row, "Salida GPIO\nPedir cabina\nLlamada SUBIR\nLlamada BAJAR",
+                     b->action, 220, i, BLK_ACTION);
+        if (b->action == 0) {
+            blk_dropdown(row, s_gpio_options, gpio_to_index(b->out_gpio), 170, i, BLK_OUT_GPIO);
+            blk_dropdown(row, "ESCRIBIR 0\nESCRIBIR 1", b->out_level, 190, i, BLK_OUT_LEVEL);
+            lv_obj_add_flag(blk_text(row, "REPOSO", TEC_MUTED), LV_OBJ_FLAG_FLEX_IN_NEW_TRACK);
+            blk_dropdown(row, "= 0\n= 1", b->rest_level, 110, i, BLK_REST_LEVEL);
+        } else {
+            char destinations[180];
+            snprintf(destinations, sizeof(destinations), "Elige piso%s", strchr(floors, '\n'));
+            blk_dropdown(row, destinations, b->action_floor, 200, i, BLK_ACTION_FLOOR);
+        }
 
         if (b->note[0] != '\0') {
             blk_text(box, b->note, TEC_MUTED);
@@ -993,6 +1047,8 @@ static void rebuild_block_rows(void)
     if (app->block_count == 0) {
         blk_text(s_blk_list, "Sin bloques. Usa + Agregar condicional.", TEC_MUTED);
     }
+    lv_obj_update_layout(s_blk_list);
+    lv_obj_scroll_to_y(s_blk_list, scroll_y, LV_ANIM_OFF);
 }
 
 static void create_blocks_screen(void)
@@ -1018,7 +1074,7 @@ static void create_blocks_screen(void)
     lv_obj_add_event_cb(s_blk_sw, blk_sw_cb, LV_EVENT_VALUE_CHANGED, NULL);
     s_blk_status = make_label(head, 24, 70, 460, 28, "", &F21, TEC_MUTED,
                               LV_TEXT_ALIGN_LEFT);
-    s_b_add = make_button(scr, 44, 234, 512, 60, "+ Agregar condicional a este piso",
+    s_b_add = make_button(scr, 44, 234, 512, 60, "+ Agregar condicional",
                 blk_add_cb, 0, NULL);
 
     s_blk_list = lv_obj_create(scr);
@@ -1052,6 +1108,16 @@ esp_err_t ui_create(void)
     create_interior(s_scr[1]);
     create_tecnica(s_scr[2]);
     create_blocks_screen();
+    s_scr_overview = lv_obj_create(NULL);
+    lv_obj_set_style_bg_color(s_scr_overview, lv_color_hex(COL_BLACK), 0);
+    make_label(s_scr_overview, 30, 35, 360, 45, "TODOS LOS PISOS", &F30, TEC_TEXT, LV_TEXT_ALIGN_LEFT);
+    make_button(s_scr_overview, 420, 30, 140, 50, "VOLVER", overview_back_cb, 0, NULL);
+    lv_obj_t *list = lv_obj_create(s_scr_overview);
+    lv_obj_set_pos(list, 20, 100);
+    lv_obj_set_size(list, 555, 850);
+    lv_obj_set_style_bg_color(list, lv_color_hex(COL_BLACK), 0);
+    lv_obj_set_scroll_dir(list, LV_DIR_VER);
+    s_overview_rows = make_label(list, 5, 5, 520, LV_SIZE_CONTENT, "", &F21, TEC_TEXT, LV_TEXT_ALIGN_LEFT);
 
     rebuild_interior_buttons();
     rebuild_floor_dropdown();
@@ -1076,8 +1142,11 @@ static void update_floor_button_states(const elevator_state_t *st)
         if (btn == NULL) {
             continue;
         }
-        bool here = (f + 1) == st->current_floor;
-        lv_obj_set_style_bg_color(btn, lv_color_hex(here ? COL_CALL : COL_BTN), 0);
+        bool here = st->position_known && (f + 1) == st->current_floor;
+        unsigned bit = 1u << f;
+        bool pending = (st->cabin_calls & bit) != 0;
+        lv_obj_set_style_bg_color(btn, lv_color_hex(here || pending ? COL_CALL : COL_BTN), 0);
+        lv_obj_set_style_border_color(btn, lv_color_hex(pending ? COL_OK : COL_BORDER), 0);
     }
 }
 
@@ -1101,6 +1170,18 @@ void ui_refresh(void)
 
     char buf[64];
 
+    char rows[1900] = "C=interior S=subir B=bajar\n\n";
+    for (int f = st.floors; f >= 1; f--) {
+        unsigned bit = 1u << (f-1);
+        char row[112];
+        int pin = app_state()->cfg.floor_gpio[f-1];
+        snprintf(row, sizeof(row), "P%02d  %s  %s%s%s\nSensor GPIO: %d\n\n", f,
+                 st.position_known && st.current_floor == f ? "[CABINA]" : "",
+                 st.cabin_calls & bit ? "C " : "", st.up_calls & bit ? "S " : "",
+                 st.down_calls & bit ? "B" : "", pin == 0xFF ? -1 : pin);
+        strncat(rows, row, sizeof(rows)-strlen(rows)-1);
+    }
+    set_txt(s_overview_rows, rows);
     /* Exterior */
     snprintf(buf, sizeof(buf), "P%02u", s_user_floor);
     set_txt(s_ext_user_floor, buf);
@@ -1112,24 +1193,15 @@ void ui_refresh(void)
     }
     set_txt(s_ext_cabin_floor, buf);
 
-    const char *dir_txt;
-    char dbuf[48];
-    if (st.dir == ELEV_DIR_UP) {
-        snprintf(dbuf, sizeof(dbuf), "%s \xC2\xB7 P%02u", "SUBIENDO", st.current_floor);
-        dir_txt = dbuf;
-    } else if (st.dir == ELEV_DIR_DOWN) {
-        snprintf(dbuf, sizeof(dbuf), "%s \xC2\xB7 P%02u", "BAJANDO", st.current_floor);
-        dir_txt = dbuf;
-    } else {
-        dir_txt = st.doors_open ? "DETENIDO \xC2\xB7 PUERTAS ABIERTAS"
-                                : "DETENIDO \xC2\xB7 PUERTAS CERRADAS";
-    }
+    const char *dir_txt = st.fault ? "FALLO DE SENSORES" :
+        st.observed_dir == ELEV_DIR_UP ? "\xC3\x9Altimo: SUBIENDO" :
+        st.observed_dir == ELEV_DIR_DOWN ? "\xC3\x9Altimo: BAJANDO" :
+        "Sentido sin confirmar";
     set_txt(s_ext_dir, dir_txt);
-    lv_obj_set_style_text_color(
-        s_ext_dir, lv_color_hex(st.dir == ELEV_DIR_IDLE ? EXT_MUTED : COL_OK), 0);
-
-    set_txt(s_ext_arrow, st.dir == ELEV_DIR_UP ? LV_SYMBOL_UP
-                         : st.dir == ELEV_DIR_DOWN ? LV_SYMBOL_DOWN : "");
+    lv_obj_set_style_text_color(s_ext_dir, lv_color_hex(
+        st.observed_dir == ELEV_DIR_IDLE ? EXT_MUTED : COL_OK), 0);
+    set_txt(s_ext_arrow, st.observed_dir == ELEV_DIR_UP ? LV_SYMBOL_UP :
+                         st.observed_dir == ELEV_DIR_DOWN ? LV_SYMBOL_DOWN : "");
     lv_obj_set_style_text_color(s_ext_arrow, lv_color_hex(COL_OK), 0);
 
     /* Interior */
@@ -1139,15 +1211,11 @@ void ui_refresh(void)
         snprintf(buf, sizeof(buf), "--");
     }
     set_txt(s_int_current, buf);
-    set_txt(s_int_dir, st.dir == ELEV_DIR_UP ? "subiendo"
-                       : st.dir == ELEV_DIR_DOWN ? "bajando" : "");
+    set_txt(s_int_dir, dir_txt);
     update_floor_button_states(&st);
-
-    int changed = memcmp(&st, &s_last_state, sizeof(st)) != 0;
-    if (changed && !st.position_known && !st.demo_mode) {
-        set_txt(s_int_status,
-                "Posici\xC3\xB3n sin confirmar: espera un sensor de piso.");
-    }
+    set_txt(s_int_status, st.fault ? "Fallo de sensores" :
+            st.position_known ? "Toca un piso para solicitarlo." :
+                                "Posici\xC3\xB3n sin confirmar: espera un sensor de piso.");
     s_last_state = st;
 
     board_unlock();
@@ -1272,11 +1340,11 @@ bool ui_test_dd(const char *name, int a, int sel)
         /* a = idx*10 + campo (0..4) */
         lv_obj_t *box = lv_obj_get_child(s_blk_list, a / 10);
         lv_obj_t *row = box ? lv_obj_get_child(box, 1) : NULL;
-        int want = a % 10, n = 0;
+        int want = a % 10;
         for (uint32_t i = 0; row && i < lv_obj_get_child_cnt(row); i++) {
             lv_obj_t *c = lv_obj_get_child(row, i);
             if (lv_obj_check_type(c, &lv_dropdown_class)) {
-                if (n++ == want) { dd = c; break; }
+                if ((int)(uintptr_t)lv_obj_get_user_data(c) == want) { dd = c; break; }
             }
         }
     }
@@ -1309,6 +1377,8 @@ void ui_test_goto(int idx)
         lv_scr_load(s_scr[idx]);
     } else if (idx == 3) {
         lv_scr_load(s_scr_blocks);
+    } else if (idx == 4) {
+        lv_scr_load(s_scr_overview);
     }
     board_unlock();
 }
@@ -1318,11 +1388,14 @@ void ui_test_dump(void)
     if (!board_lock(500)) {
         return;
     }
-    printf("UI scr=%d user=%s cabin=%s dir='%s' ext_hint='%s'\n", s_cur_scr,
+    printf("UI scr=%d user=%s cabin=%s dir='%s' ext_hint='%s'\n", (lv_scr_act() == s_scr_overview ? 4 : lv_scr_act() == s_scr_blocks ? 3 : s_cur_scr),
            lv_label_get_text(s_ext_user_floor), lv_label_get_text(s_ext_cabin_floor),
            lv_label_get_text(s_ext_dir), lv_label_get_text(s_ext_hint));
     printf("UI int=%s status='%s' btns=%u\n", lv_label_get_text(s_int_current),
            lv_label_get_text(s_int_status), s_int_btn_count);
+    for (uint8_t f = 0; f < s_int_btn_count; f++) {
+        printf("UI floor=%s\n", lv_label_get_text(lv_obj_get_child(s_int_btn[f], 0)));
+    }
     printf("UI tec count=%s mode='%s' selfloor=%u gpio_sel=%u level_sel=%u read='%s' then='%s' note='%s'\n",
            lv_label_get_text(s_tec_count), lv_label_get_text(s_tec_mode_lbl),
            s_sel_floor, (unsigned)lv_dropdown_get_selected(s_tec_dd_gpio),

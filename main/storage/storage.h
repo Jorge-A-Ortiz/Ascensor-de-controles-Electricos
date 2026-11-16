@@ -36,7 +36,7 @@ extern "C" {
 #define STORAGE_KEY_SOUND       "sound"
 #define STORAGE_KEY_DEMO        "demo_mode"
 
-#define STORAGE_RULES_VERSION   "rules_v1"
+#define STORAGE_RULES_VERSION   "rules_v2"
 
 /* Declaracion adelantada: la definicion vive en rules.h */
 struct rule_block_s;
@@ -45,7 +45,7 @@ typedef struct {
     uint8_t floors;
     uint8_t floor_gpio[ELEVATOR_MAX_FLOORS];   /* GPIO del sensor de piso */
     uint8_t floor_level[ELEVATOR_MAX_FLOORS];  /* nivel activo: 0 o 1 */
-    bool    demo_mode;                         /* true = simulacion */
+    bool    demo_mode;                         /* legado: siempre false */
     bool    blocks_enabled;
     uint8_t base3;                             /* ajuste interno heredado */
     uint8_t sound;                             /* volumen/aviso */

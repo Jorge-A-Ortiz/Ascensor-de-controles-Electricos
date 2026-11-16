@@ -5,6 +5,23 @@ trabajo sin contexto previo. Última actualización: 2026-11-16.
 
 ---
 
+## Actualización de programación (2026-11-16)
+
+Esta actualización sustituye las referencias a modo demo y bloques GPIO del
+resto del documento, que conserva el contexto histórico de recuperación.
+
+- Eliminado el avance simulado y el selector demo; posición exclusivamente GPIO.
+- Bloques `rules_v2`: botones virtuales de 300 ms, piso, dirección, puertas y
+  llamadas pendientes; acciones GPIO y llamadas desde entradas físicas.
+- Recogida colectiva con llamadas interiores/exteriores por sentido, incluidas
+  paradas nuevas durante el recorrido. Vista desplazable «Ver pisos».
+- Sensores contradictorios retienen fallo y llevan las reglas a reposo.
+- Los timers del controlador comparten el mutex LVGL con las ediciones de UI.
+- Pruebas host con sanitizadores y sintaxis UI con cabeceras LVGL 8.4 verificadas.
+  No se compiló el firmware ESP-IDF ni se grabó/probó la placa en esta sesión.
+- Cambios realizados en la copia local; ver `docs/PROGRAMACION_Y_FUNCIONAMIENTO.md`
+  para ejemplos, alcance y funciones físicas todavía pendientes.
+
 ## 1. Qué es este proyecto
 
 Reconstrucción del firmware de un **ascensor de controles eléctricos** que se
