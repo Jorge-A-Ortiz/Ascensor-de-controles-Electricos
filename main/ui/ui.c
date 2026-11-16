@@ -1,13 +1,17 @@
 /**
  * @file ui.c
- * @brief Tres pantallas deslizables (Exterior / Interior / Tecnica) en LVGL 8.
+ * @brief UI de AscensorCrowPanel reconstruida a partir del firmware original.
  *
- * La estructura reproduce la del firmware original: un tileview vertical con
- * tres paginas y el aviso "Desliza para cambiar de pantalla".
+ * Datos recuperados del binario (ver docs/reverse/HALLAZGOS_UI.md):
+ *  - Tres pantallas independientes (Exterior / Interior / Tecnica) de 600x1024,
+ *    todo en coordenadas absolutas, que se cambian con un gesto (swipe).
+ *  - Tipografia propia (fonts_orig.c) con Latin-1 completo; Montserrat solo
+ *    como "fallback" de simbolos, igual que el original.
+ *  - Helpers make_label / make_button / make_panel con los mismos estilos.
+ *  - Puntos indicadores en y=948 y aviso "Desliza para cambiar de pantalla".
  *
- * Nota sobre acentos: las fuentes Montserrat incluidas en LVGL 8 solo traen
- * ASCII. Los textos van sin tildes a proposito para que se rendericen siempre.
- * Ver README para activar el rango extendido.
+ * Lo unico que NO se pudo recuperar es el editor de bloques a pantalla
+ * completa: esta es una version propia (misma funcionalidad y estilo).
  */
 
 #include "ui.h"
@@ -21,112 +25,197 @@
 #include "board.h"
 #include "board_config.h"
 #include "elevator.h"
+#include "fonts_orig.h"
 #include "rules.h"
 
 /* ------------------------------------------------------------------ */
-/*  Paleta y constantes                                               */
+/*  Paleta (RGB565 del original convertido a RGB888)                  */
 /* ------------------------------------------------------------------ */
 
-#define COL_BG      0x0D1117
-#define COL_CARD    0x161B22
-#define COL_BORDER  0x30363D
-#define COL_ACCENT  0x2F81F7
-#define COL_OK      0x3FB950
-#define COL_WARN    0xD29922
-#define COL_TEXT    0xE6EDF3
-#define COL_MUTED   0x8B949E
+#define COL_BLACK       0x000000
+#define COL_BTN         0x102031   /* 0x1106 */
+#define COL_BTN_PRESS   0x21354A   /* 0x21a9 */
+#define COL_BORDER      0x293542   /* 0x29a8 */
+#define COL_BTN_TEXT    0xEFF3F7   /* 0xef9e */
+#define COL_PANEL       0x101821   /* 0x10c4 */
+#define COL_PANEL_EXT   0x101410   /* 0x10a2 */
+#define COL_CALL        0x216952   /* 0x234a */
+#define COL_OK          0x73D7A5   /* 0x76b4 */
+#define COL_BLUE_BORDER 0x8CBEFF   /* 0x8dff */
+#define COL_DOT_OFF     0x738284   /* 0x7410 */
 
-#define SCREEN_W    LCD_H_RES
-#define SCREEN_H    LCD_V_RES
-#define PAD         18
+/* Por pantalla (texto/acento) */
+#define EXT_MUTED       0xA7B3AC
+#define EXT_TEXT        0xF2F5F0
+#define EXT_ACCENT      0x206A50
+#define INT_MUTED       0x97ABA0
+#define INT_ACCENT      0xCAEDB0
+#define TEC_ACCENT      0x8EBEFF
+#define TEC_TEXT        0xEEF2F6
+#define TEC_MUTED       0x91A0B2
+#define TEC_GREEN       0x76D6A2
+
+#define SCREEN_W        LCD_H_RES
+#define SCREEN_H        LCD_V_RES
+
+enum {
+    ID_PREV = 1, ID_NEXT, ID_UP, ID_DOWN, ID_MINUS, ID_PLUS,
+    ID_MODE = 22, ID_EDIT = 30,
+};
 
 static const int s_gpios[USER_GPIO_COUNT] = USER_GPIO_LIST;
-
 static char s_gpio_options[220];
 
 /* ------------------------------------------------------------------ */
-/*  Widgets                                                           */
+/*  Fuentes: copia en RAM con fallback Montserrat (como el original)  */
 /* ------------------------------------------------------------------ */
 
-static lv_obj_t *s_tv;
+static lv_font_t F19, F21, F25, F30, F38, F59, F66;
+
+static void init_fonts(void)
+{
+    F19 = font_ui_xs;   F19.fallback = &lv_font_montserrat_14;
+    F21 = font_ui_s;    F21.fallback = &lv_font_montserrat_16;
+    F25 = font_ui_m;    F25.fallback = &lv_font_montserrat_20;
+    F30 = font_ui_l;    F30.fallback = &lv_font_montserrat_24;
+    F38 = font_ui_xl;   F38.fallback = &lv_font_montserrat_32;
+    F59 = font_ui_xxl;  F59.fallback = &lv_font_montserrat_48;
+    F66 = font_ui_digits;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Estado de widgets                                                 */
+/* ------------------------------------------------------------------ */
+
+static lv_obj_t *s_scr[3];
+static lv_obj_t *s_scr_blocks;
+static int       s_cur_scr;
 
 /* Exterior */
 static lv_obj_t *s_ext_user_floor;
 static lv_obj_t *s_ext_cabin_floor;
+static lv_obj_t *s_ext_arrow;
 static lv_obj_t *s_ext_dir;
-static lv_obj_t *s_ext_status;
+static lv_obj_t *s_ext_hint;
 
 /* Interior */
 static lv_obj_t *s_int_current;
-static lv_obj_t *s_int_status;
+static lv_obj_t *s_int_dir;
 static lv_obj_t *s_int_grid;
+static lv_obj_t *s_int_status;
 static lv_obj_t *s_int_btn[ELEVATOR_MAX_FLOORS];
 static uint8_t   s_int_btn_count;
 
 /* Tecnica */
-static lv_obj_t *s_tech_floors_value;
-static lv_obj_t *s_tech_mode;
-static lv_obj_t *s_tech_mode_sw;
-static lv_obj_t *s_tech_blocks_status;
-static lv_obj_t *s_tech_floor_list;
-static lv_obj_t *s_tech_block_list;
-static lv_obj_t *s_tech_blocks_sw;
-static lv_obj_t *s_msgbox;
+static lv_obj_t *s_tec_count;
+static lv_obj_t *s_tec_mode_lbl;
+static lv_obj_t *s_tec_mode_btn_lbl;
+static lv_obj_t *s_tec_dd_floor;
+static lv_obj_t *s_tec_dd_gpio;
+static lv_obj_t *s_tec_dd_level;
+static lv_obj_t *s_tec_read;
+static lv_obj_t *s_tec_then;
+static lv_obj_t *s_tec_note;
+static uint8_t   s_sel_floor = 1;
 
-static lv_style_t s_st_card;
-static lv_style_t s_st_btn;
-static lv_style_t s_st_btn_accent;
+/* Editor de bloques */
+static lv_obj_t *s_blk_status;
+static lv_obj_t *s_blk_sw;
+static lv_obj_t *s_blk_list;
+static lv_obj_t *s_msgbox;
 
 static uint8_t s_user_floor = 1;
 static elevator_state_t s_last_state;
 
 /* ------------------------------------------------------------------ */
-/*  Utilidades de estilo                                              */
+/*  Helpers (equivalentes a make_label / make_button / make_panel)    */
 /* ------------------------------------------------------------------ */
 
-static lv_obj_t *card(lv_obj_t *parent, lv_coord_t w, lv_coord_t h)
+static lv_obj_t *make_label(lv_obj_t *parent, int x, int y, int w, int h,
+                            const char *txt, const lv_font_t *font,
+                            uint32_t color, lv_text_align_t align)
 {
-    lv_obj_t *obj = lv_obj_create(parent);
-    lv_obj_remove_style_all(obj);
-    lv_obj_add_style(obj, &s_st_card, 0);
-    lv_obj_set_size(obj, w, h);
-    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
-    return obj;
+    lv_obj_t *l = lv_label_create(parent);
+    lv_label_set_text(l, txt);
+    lv_obj_set_pos(l, x, y);
+    lv_obj_set_size(l, w, h);
+    lv_obj_set_style_text_font(l, font, 0);
+    lv_obj_set_style_text_color(l, lv_color_hex(color), 0);
+    lv_obj_set_style_text_align(l, align, 0);
+    lv_label_set_long_mode(l, LV_LABEL_LONG_WRAP);
+    return l;
 }
 
-static lv_obj_t *text(lv_obj_t *parent, const char *txt,
-                      const lv_font_t *font, uint32_t color)
+static lv_obj_t *make_panel(lv_obj_t *parent, int x, int y, int w, int h)
 {
-    lv_obj_t *label = lv_label_create(parent);
-    lv_label_set_text(label, txt);
-    lv_obj_set_style_text_font(label, font, 0);
-    lv_obj_set_style_text_color(label, lv_color_hex(color), 0);
-    return label;
+    lv_obj_t *p = lv_obj_create(parent);
+    lv_obj_remove_style_all(p);
+    lv_obj_set_pos(p, x, y);
+    lv_obj_set_size(p, w, h);
+    lv_obj_clear_flag(p, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(p, lv_color_hex(COL_PANEL), 0);
+    lv_obj_set_style_bg_opa(p, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_color(p, lv_color_hex(COL_BORDER), 0);
+    lv_obj_set_style_border_width(p, 1, 0);
+    lv_obj_set_style_radius(p, 16, 0);
+    return p;
 }
 
-static lv_obj_t *button(lv_obj_t *parent, const char *txt, lv_coord_t w,
-                        lv_coord_t h, bool accent)
+static lv_obj_t *make_button(lv_obj_t *parent, int x, int y, int w, int h,
+                             const char *txt, lv_event_cb_t cb, intptr_t id,
+                             lv_obj_t **out_label)
 {
-    lv_obj_t *btn = lv_btn_create(parent);
-    lv_obj_remove_style_all(btn);
-    lv_obj_add_style(btn, accent ? &s_st_btn_accent : &s_st_btn, 0);
-    lv_obj_set_size(btn, w, h);
-
-    lv_obj_t *label = text(btn, txt, &lv_font_montserrat_20, COL_TEXT);
-    lv_obj_center(label);
-    return btn;
+    lv_obj_t *b = lv_btn_create(parent);
+    lv_obj_remove_style_all(b);
+    lv_obj_set_pos(b, x, y);
+    lv_obj_set_size(b, w, h);
+    lv_obj_set_style_bg_color(b, lv_color_hex(COL_BTN), 0);
+    lv_obj_set_style_bg_opa(b, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_color(b, lv_color_hex(COL_BTN_PRESS), LV_STATE_PRESSED);
+    lv_obj_set_style_border_color(b, lv_color_hex(COL_BORDER), 0);
+    lv_obj_set_style_border_width(b, 1, 0);
+    lv_obj_set_style_radius(b, 12, 0);
+    lv_obj_set_style_shadow_width(b, 0, 0);
+    lv_obj_set_style_text_color(b, lv_color_hex(COL_BTN_TEXT), 0);
+    lv_obj_set_style_text_font(b, &F21, 0);
+    if (cb != NULL) {
+        lv_obj_add_event_cb(b, cb, LV_EVENT_CLICKED, (void *)id);
+    }
+    lv_obj_t *l = lv_label_create(b);
+    lv_label_set_text(l, txt);
+    lv_obj_center(l);
+    if (out_label != NULL) {
+        *out_label = l;
+    }
+    return b;
 }
 
-static lv_obj_t *column(lv_obj_t *parent)
+static void style_dropdown(lv_obj_t *dd, const lv_font_t *font);
+
+static void dd_open_cb(lv_event_t *e)
 {
-    lv_obj_t *col = lv_obj_create(parent);
-    lv_obj_remove_style_all(col);
-    lv_obj_set_width(col, lv_pct(100));
-    lv_obj_set_height(col, LV_SIZE_CONTENT);
-    lv_obj_set_flex_flow(col, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(col, 14, 0);
-    lv_obj_clear_flag(col, LV_OBJ_FLAG_SCROLLABLE);
-    return col;
+    lv_obj_t *list = lv_dropdown_get_list(lv_event_get_target(e));
+    if (list == NULL) {
+        return;
+    }
+    lv_obj_set_style_bg_color(list, lv_color_hex(COL_PANEL), 0);
+    lv_obj_set_style_text_color(list, lv_color_hex(COL_BTN_TEXT), 0);
+    lv_obj_set_style_border_color(list, lv_color_hex(COL_BORDER), 0);
+    lv_obj_set_style_text_font(list, &F25, 0);
+    lv_obj_set_style_bg_color(list, lv_color_hex(COL_CALL),
+                              LV_PART_SELECTED | LV_STATE_CHECKED);
+}
+
+static void style_dropdown(lv_obj_t *dd, const lv_font_t *font)
+{
+    lv_obj_set_style_bg_color(dd, lv_color_hex(COL_BTN), 0);
+    lv_obj_set_style_bg_opa(dd, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_color(dd, lv_color_hex(COL_BORDER), 0);
+    lv_obj_set_style_border_width(dd, 1, 0);
+    lv_obj_set_style_radius(dd, 12, 0);
+    lv_obj_set_style_text_color(dd, lv_color_hex(COL_BTN_TEXT), 0);
+    lv_obj_set_style_text_font(dd, font, 0);
+    lv_obj_add_event_cb(dd, dd_open_cb, LV_EVENT_READY, NULL);
 }
 
 static void build_gpio_options(void)
@@ -150,7 +239,59 @@ static int gpio_to_index(uint8_t gpio)
 }
 
 /* ------------------------------------------------------------------ */
-/*  Mensajes                                                          */
+/*  Navegacion entre pantallas (gesto horizontal)                     */
+/* ------------------------------------------------------------------ */
+
+static void goto_screen(int idx, bool from_right)
+{
+    if (idx < 0 || idx > 2 || idx == s_cur_scr) {
+        return;
+    }
+    s_cur_scr = idx;
+    lv_scr_load_anim(s_scr[idx],
+                     from_right ? LV_SCR_LOAD_ANIM_OVER_LEFT
+                                : LV_SCR_LOAD_ANIM_OVER_RIGHT,
+                     200, 0, false);
+}
+
+static void gesture_cb(lv_event_t *e)
+{
+    (void)e;
+    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+    if (dir == LV_DIR_LEFT) {
+        goto_screen(s_cur_scr + 1, true);
+    } else if (dir == LV_DIR_RIGHT) {
+        goto_screen(s_cur_scr - 1, false);
+    }
+}
+
+static lv_obj_t *new_screen(void)
+{
+    lv_obj_t *s = lv_obj_create(NULL);
+    lv_obj_remove_style_all(s);
+    lv_obj_set_size(s, SCREEN_W, SCREEN_H);
+    lv_obj_set_style_bg_color(s, lv_color_hex(COL_BLACK), 0);
+    lv_obj_set_style_bg_opa(s, LV_OPA_COVER, 0);
+    lv_obj_clear_flag(s, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_event_cb(s, gesture_cb, LV_EVENT_GESTURE, NULL);
+    return s;
+}
+
+/* Puntos indicadores + aviso inferior (0x40014dc8 del original) */
+static void make_footer(lv_obj_t *scr, int active, uint32_t accent)
+{
+    for (int i = 0; i < 3; i++) {
+        lv_obj_t *d = make_panel(scr, 270 + 24 * i, 948, 8, 8);
+        lv_obj_set_style_bg_color(d, lv_color_hex(i == active ? accent
+                                                              : COL_DOT_OFF), 0);
+        lv_obj_set_style_border_width(d, 0, 0);
+    }
+    make_label(scr, 40, 978, 520, 22, "<  Desliza para cambiar de pantalla  >",
+               &F19, accent, LV_TEXT_ALIGN_CENTER);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mensajes modales (errores de reglas)                              */
 /* ------------------------------------------------------------------ */
 
 static void msgbox_close_cb(lv_event_t *e)
@@ -172,8 +313,9 @@ void ui_show_message(const char *title, const char *body)
     static const char *btns[] = { "CERRAR", "" };
     s_msgbox = lv_msgbox_create(NULL, title, body, btns, true);
     lv_obj_set_width(s_msgbox, 480);
-    lv_obj_set_style_bg_color(s_msgbox, lv_color_hex(COL_CARD), 0);
-    lv_obj_set_style_text_color(s_msgbox, lv_color_hex(COL_TEXT), 0);
+    lv_obj_set_style_bg_color(s_msgbox, lv_color_hex(COL_PANEL), 0);
+    lv_obj_set_style_text_color(s_msgbox, lv_color_hex(COL_BTN_TEXT), 0);
+    lv_obj_set_style_text_font(s_msgbox, &F25, 0);
     lv_obj_add_event_cb(s_msgbox, msgbox_close_cb, LV_EVENT_VALUE_CHANGED, NULL);
     board_unlock();
 }
@@ -182,99 +324,72 @@ void ui_show_message(const char *title, const char *body)
 /*  Pantalla 1: EXTERIOR                                              */
 /* ------------------------------------------------------------------ */
 
-static void ext_floor_prev_cb(lv_event_t *e)
+static void ext_cb(lv_event_t *e)
 {
-    (void)e;
-    if (s_user_floor > 1) {
-        s_user_floor--;
-    }
-    ui_refresh();
-}
-
-static void ext_floor_next_cb(lv_event_t *e)
-{
-    (void)e;
+    intptr_t id = (intptr_t)lv_event_get_user_data(e);
     uint8_t floors = app_state()->cfg.floors;
-    if (s_user_floor < floors) {
-        s_user_floor++;
+
+    switch (id) {
+    case ID_PREV:
+        if (s_user_floor > 1) {
+            s_user_floor--;
+        }
+        break;
+    case ID_NEXT:
+        if (s_user_floor < floors) {
+            s_user_floor++;
+        }
+        break;
+    case ID_UP:
+        board_sound(BOARD_SOUND_PRESS);
+        elevator_call(s_user_floor, ELEV_DIR_UP);
+        break;
+    case ID_DOWN:
+        board_sound(BOARD_SOUND_PRESS);
+        elevator_call(s_user_floor, ELEV_DIR_DOWN);
+        break;
+    default:
+        break;
     }
     ui_refresh();
 }
 
-static void ext_call_up_cb(lv_event_t *e)
+static void create_exterior(lv_obj_t *scr)
 {
-    (void)e;
-    board_sound(BOARD_SOUND_PRESS);
-    elevator_call(s_user_floor, ELEV_DIR_UP);
-    ui_refresh();
-}
+    make_label(scr, 44, 42, 360, 25, "ASCENSOR / EXTERIOR", &F21, EXT_MUTED,
+               LV_TEXT_ALIGN_LEFT);
+    make_label(scr, 40, 120, 520, 32, "ESTÁS EN EL PISO", &F25, EXT_MUTED,
+               LV_TEXT_ALIGN_CENTER);
+    s_ext_user_floor = make_label(scr, 100, 182, 400, 144, "", &F66, EXT_TEXT,
+                                  LV_TEXT_ALIGN_CENTER);
+    make_button(scr, 90, 358, 190, 66, "Piso anterior", ext_cb, ID_PREV, NULL);
+    make_button(scr, 320, 358, 190, 66, "Piso siguiente", ext_cb, ID_NEXT, NULL);
 
-static void ext_call_down_cb(lv_event_t *e)
-{
-    (void)e;
-    board_sound(BOARD_SOUND_PRESS);
-    elevator_call(s_user_floor, ELEV_DIR_DOWN);
-    ui_refresh();
-}
+    lv_obj_t *p = make_panel(scr, 44, 470, 512, 170);
+    lv_obj_set_style_bg_color(p, lv_color_hex(COL_PANEL_EXT), 0);
+    make_label(p, 24, 20, 330, 26, "EL ASCENSOR ESTÁ EN", &F21, EXT_MUTED,
+               LV_TEXT_ALIGN_LEFT);
+    s_ext_cabin_floor = make_label(p, 24, 62, 180, 60, "", &F59, EXT_TEXT,
+                                   LV_TEXT_ALIGN_LEFT);
+    s_ext_arrow = make_label(p, 350, 46, 100, 65, "", &F59, EXT_TEXT,
+                             LV_TEXT_ALIGN_LEFT);
+    s_ext_dir = make_label(p, 225, 122, 265, 28, "", &F19, EXT_TEXT,
+                           LV_TEXT_ALIGN_LEFT);
 
-static void create_exterior(lv_obj_t *tile)
-{
-    lv_obj_t *col = column(tile);
+    make_label(scr, 40, 685, 520, 34, "¿Hacia dónde vas?", &F30, EXT_TEXT,
+               LV_TEXT_ALIGN_CENTER);
+    lv_obj_t *up = make_button(scr, 44, 746, 246, 112, LV_SYMBOL_UP "  SUBIR",
+                               ext_cb, ID_UP, NULL);
+    lv_obj_t *dn = make_button(scr, 310, 746, 246, 112, LV_SYMBOL_DOWN "  BAJAR",
+                               ext_cb, ID_DOWN, NULL);
+    lv_obj_set_style_bg_color(up, lv_color_hex(COL_CALL), 0);
+    lv_obj_set_style_bg_color(dn, lv_color_hex(COL_CALL), 0);
+    lv_obj_set_style_text_font(up, &F38, 0);
+    lv_obj_set_style_text_font(dn, &F38, 0);
 
-    text(col, "ASCENSOR / EXTERIOR", &lv_font_montserrat_20, COL_MUTED);
-
-    lv_obj_t *select = card(col, lv_pct(100), 190);
-    lv_obj_set_flex_flow(select, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(select, LV_FLEX_ALIGN_CENTER,
-                          LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_row(select, 10, 0);
-
-    text(select, "ESTAS EN EL PISO", &lv_font_montserrat_20, COL_MUTED);
-
-    lv_obj_t *row = lv_obj_create(select);
-    lv_obj_remove_style_all(row);
-    lv_obj_set_size(row, lv_pct(100), 90);
-    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN,
-                          LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
-    lv_obj_t *prev = button(row, "<", 90, 80, false);
-    lv_obj_add_event_cb(prev, ext_floor_prev_cb, LV_EVENT_CLICKED, NULL);
-
-    s_ext_user_floor = text(row, "P01", &lv_font_montserrat_36, COL_TEXT);
-
-    lv_obj_t *next = button(row, ">", 90, 80, false);
-    lv_obj_add_event_cb(next, ext_floor_next_cb, LV_EVENT_CLICKED, NULL);
-
-    lv_obj_t *status = card(col, lv_pct(100), 230);
-    lv_obj_set_flex_flow(status, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(status, LV_FLEX_ALIGN_CENTER,
-                          LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_row(status, 8, 0);
-
-    text(status, "EL ASCENSOR ESTA EN", &lv_font_montserrat_20, COL_MUTED);
-    s_ext_cabin_floor = text(status, "P01", &lv_font_montserrat_36, COL_ACCENT);
-    s_ext_dir = text(status, "DETENIDO - PUERTAS CERRADAS",
-                     &lv_font_montserrat_20, COL_WARN);
-    s_ext_status = text(status, "Tu piso se ilumina al llegar.",
-                        &lv_font_montserrat_14, COL_MUTED);
-
-    text(col, "HACIA DONDE VAS?", &lv_font_montserrat_20, COL_MUTED);
-
-    lv_obj_t *row2 = lv_obj_create(col);
-    lv_obj_remove_style_all(row2);
-    lv_obj_set_size(row2, lv_pct(100), 100);
-    lv_obj_set_flex_flow(row2, LV_FLEX_FLOW_ROW);
-    lv_obj_set_style_pad_column(row2, 14, 0);
-
-    lv_obj_t *up = button(row2, "SUBIR", lv_pct(49), 100, true);
-    lv_obj_add_event_cb(up, ext_call_up_cb, LV_EVENT_CLICKED, NULL);
-
-    lv_obj_t *down = button(row2, "BAJAR", lv_pct(49), 100, true);
-    lv_obj_add_event_cb(down, ext_call_down_cb, LV_EVENT_CLICKED, NULL);
-
-    text(col, "<  Desliza para cambiar de pantalla  >",
-         &lv_font_montserrat_14, COL_MUTED);
+    s_ext_hint = make_label(scr, 40, 884, 520, 48, "Tu piso se ilumina al llegar.",
+                            &F19, EXT_MUTED, LV_TEXT_ALIGN_CENTER);
+    make_footer(scr, 0, EXT_ACCENT);
 }
 
 /* ------------------------------------------------------------------ */
@@ -300,63 +415,299 @@ static void rebuild_interior_buttons(void)
     uint8_t floors = app_state()->cfg.floors;
     s_int_btn_count = floors;
 
-    for (uint8_t f = 1; f <= floors; f++) {
+    for (uint8_t n = 1; n <= floors; n++) {
         char txt[8];
-        snprintf(txt, sizeof(txt), "P%02u", f);
-        lv_obj_t *btn = button(s_int_grid, txt, lv_pct(31), 90, false);
-        lv_obj_add_event_cb(btn, int_floor_cb, LV_EVENT_CLICKED,
-                            (void *)(uintptr_t)f);
-        s_int_btn[f - 1] = btn;
+        snprintf(txt, sizeof(txt), "P%02u", n);
+        int col = (n - 1) % 3;
+        int row = (n - 1) / 3;
+        lv_obj_t *lbl = NULL;
+        lv_obj_t *b = make_button(s_int_grid, col * 176, row * 106, 160, 90, txt,
+                                  int_floor_cb, n, &lbl);
+        lv_obj_set_style_text_font(b, &F38, 0);
+        lv_obj_set_style_radius(b, 45, 0);
+        s_int_btn[n - 1] = b;
     }
     s_last_state.current_floor = 0xFF;  /* fuerza refresco */
 }
 
-static void create_interior(lv_obj_t *tile)
+static void create_interior(lv_obj_t *scr)
 {
-    lv_obj_t *col = column(tile);
+    make_label(scr, 44, 42, 480, 28, "ASCENSOR / INTERIOR", &F21, INT_MUTED,
+               LV_TEXT_ALIGN_LEFT);
+    make_label(scr, 40, 111, 520, 30, "ESTÁS AQUÍ", &F25, INT_MUTED,
+               LV_TEXT_ALIGN_CENTER);
+    s_int_current = make_label(scr, 100, 165, 400, 144, "", &F66, INT_ACCENT,
+                               LV_TEXT_ALIGN_CENTER);
+    s_int_dir = make_label(scr, 40, 325, 520, 32, "", &F21, INT_ACCENT,
+                           LV_TEXT_ALIGN_CENTER);
+    make_label(scr, 40, 394, 520, 36, "¿A qué piso quieres ir?", &F30, TEC_TEXT,
+               LV_TEXT_ALIGN_CENTER);
 
-    text(col, "ASCENSOR / INTERIOR", &lv_font_montserrat_20, COL_MUTED);
-
-    lv_obj_t *here = card(col, lv_pct(100), 150);
-    lv_obj_set_flex_flow(here, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(here, LV_FLEX_ALIGN_CENTER,
-                          LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    text(here, "ESTAS AQUI", &lv_font_montserrat_20, COL_MUTED);
-    s_int_current = text(here, "P01", &lv_font_montserrat_36, COL_ACCENT);
-
-    text(col, "A QUE PISO QUIERES IR?", &lv_font_montserrat_20, COL_MUTED);
-
-    s_int_grid = card(col, lv_pct(100), 430);
-    lv_obj_set_flex_flow(s_int_grid, LV_FLEX_FLOW_ROW_WRAP);
-    lv_obj_set_flex_align(s_int_grid, LV_FLEX_ALIGN_SPACE_BETWEEN,
-                          LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
-    lv_obj_set_style_pad_row(s_int_grid, 12, 0);
+    s_int_grid = make_panel(scr, 44, 454, 512, 416);
+    lv_obj_set_style_bg_opa(s_int_grid, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(s_int_grid, 0, 0);
     lv_obj_add_flag(s_int_grid, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scroll_dir(s_int_grid, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(s_int_grid, LV_SCROLLBAR_MODE_OFF);
 
-    s_int_status = text(col, "Elige un piso", &lv_font_montserrat_14, COL_MUTED);
+    s_int_status = make_label(scr, 40, 895, 520, 24,
+                              "Tu piso se ilumina al llegar.", &F19, INT_MUTED,
+                              LV_TEXT_ALIGN_CENTER);
+    make_footer(scr, 1, INT_ACCENT);
 }
 
 /* ------------------------------------------------------------------ */
 /*  Pantalla 3: TECNICA                                               */
 /* ------------------------------------------------------------------ */
 
-static void tech_floors_minus_cb(lv_event_t *e);
-static void tech_floors_plus_cb(lv_event_t *e);
-static void tech_mode_cb(lv_event_t *e);
-static void tech_blocks_sw_cb(lv_event_t *e);
-static void tech_add_block_cb(lv_event_t *e);
-static void tech_floor_gpio_cb(lv_event_t *e);
-static void tech_floor_level_cb(lv_event_t *e);
-static void rebuild_floor_rows(void);
+static void open_blocks_cb(lv_event_t *e);
 static void rebuild_block_rows(void);
 
-/* Reconstrucciones diferidas: no se puede borrar el widget que origino el
- * evento mientras LVGL lo esta procesando. */
-static void rebuild_floor_rows_async(void *unused)
+static void tec_note(const char *txt)
 {
-    (void)unused;
-    rebuild_floor_rows();
+    if (s_tec_note != NULL) {
+        lv_label_set_text(s_tec_note, txt);
+    }
 }
+
+static void rebuild_floor_dropdown(void)
+{
+    if (s_tec_dd_floor == NULL) {
+        return;
+    }
+    app_state_t *app = app_state();
+    char opts[ELEVATOR_MAX_FLOORS * 10];
+    opts[0] = '\0';
+    for (uint8_t f = 1; f <= app->cfg.floors; f++) {
+        char tmp[12];
+        snprintf(tmp, sizeof(tmp), "%sPiso %u", f == 1 ? "" : "\n", f);
+        strcat(opts, tmp);
+    }
+    if (s_sel_floor > app->cfg.floors) {
+        s_sel_floor = app->cfg.floors;
+    }
+    lv_dropdown_set_options(s_tec_dd_floor, opts);
+    lv_dropdown_set_selected(s_tec_dd_floor, s_sel_floor - 1);
+}
+
+static void refresh_tech_labels(void)
+{
+    app_state_t *app = app_state();
+    char buf[64];
+
+    if (s_tec_count != NULL) {
+        snprintf(buf, sizeof(buf), "%u", app->cfg.floors);
+        lv_label_set_text(s_tec_count, buf);
+    }
+    const char *mode = app->cfg.demo_mode ? "MODO DEMO" : "GPIO REALES";
+    if (s_tec_mode_lbl != NULL) {
+        lv_label_set_text(s_tec_mode_lbl, mode);
+    }
+    if (s_tec_mode_btn_lbl != NULL) {
+        lv_label_set_text(s_tec_mode_btn_lbl, mode);
+    }
+    if (s_tec_dd_gpio != NULL) {
+        lv_dropdown_set_selected(
+            s_tec_dd_gpio, gpio_to_index(app->cfg.floor_gpio[s_sel_floor - 1]));
+    }
+    if (s_tec_dd_level != NULL) {
+        lv_dropdown_set_selected(s_tec_dd_level,
+                                 app->cfg.floor_level[s_sel_floor - 1] ? 1 : 0);
+    }
+    if (s_tec_then != NULL) {
+        snprintf(buf, sizeof(buf), "ENTONCES piso %u + encender su luz",
+                 s_sel_floor);
+        lv_label_set_text(s_tec_then, buf);
+    }
+    if (s_tec_read != NULL) {
+        bool has_gpio = app->cfg.floor_gpio[s_sel_floor - 1] != 0xFF;
+        elevator_state_t st;
+        elevator_get_state(&st);
+        if (app->cfg.demo_mode) {
+            snprintf(buf, sizeof(buf), "Lectura: modo demo");
+        } else if (st.position_known) {
+            snprintf(buf, sizeof(buf), "Piso detectado: %u · %s",
+                     st.current_floor, has_gpio ? "GPIO activo" : "sin GPIO");
+        } else {
+            snprintf(buf, sizeof(buf), "Lectura: %s",
+                     has_gpio ? "GPIO activo" : "sin GPIO");
+        }
+        lv_label_set_text(s_tec_read, buf);
+    }
+    if (s_blk_status != NULL) {
+        snprintf(buf, sizeof(buf), "BLOQUES ACTIVOS %u/%u",
+                 (unsigned)rules_active_count(), (unsigned)RULES_MAX_BLOCKS);
+        lv_label_set_text(s_blk_status, buf);
+    }
+}
+
+static void tec_floors_cb(lv_event_t *e)
+{
+    intptr_t id = (intptr_t)lv_event_get_user_data(e);
+    app_state_t *app = app_state();
+
+    if (!app->cfg.demo_mode) {
+        tec_note("Desactiva GPIO antes de cambiar los pisos.");
+        return;
+    }
+    if (app->cfg.blocks_enabled) {
+        tec_note("Desactiva los bloques antes de usar sensores de piso.");
+        return;
+    }
+    if (id == ID_MINUS && app->cfg.floors > ELEVATOR_MIN_FLOORS) {
+        app->cfg.floors--;
+    } else if (id == ID_PLUS && app->cfg.floors < ELEVATOR_MAX_FLOORS) {
+        app->cfg.floors++;
+    } else {
+        return;
+    }
+    if (s_user_floor > app->cfg.floors) {
+        s_user_floor = app->cfg.floors;
+    }
+    app_apply_config();
+    rebuild_floor_dropdown();
+    rebuild_interior_buttons();
+    refresh_tech_labels();
+    ui_refresh();
+}
+
+static void tec_mode_cb(lv_event_t *e)
+{
+    (void)e;
+    app_state_t *app = app_state();
+
+    if (app->cfg.demo_mode) {
+        bool any = false;
+        for (int i = 0; i < app->cfg.floors; i++) {
+            if (app->cfg.floor_gpio[i] != 0xFF) {
+                any = true;
+            }
+        }
+        if (!any) {
+            tec_note("Asigna al menos un GPIO a un piso.");
+            return;
+        }
+    }
+    app->cfg.demo_mode = !app->cfg.demo_mode;
+    app_apply_config();
+    tec_note(app->cfg.demo_mode ? "Demo activa: posición simulada."
+                                : "GPIO reales activos. Filtrado de 30 ms.");
+    refresh_tech_labels();
+    ui_refresh();
+}
+
+static void tec_floor_sel_cb(lv_event_t *e)
+{
+    s_sel_floor = (uint8_t)(lv_dropdown_get_selected(lv_event_get_target(e)) + 1);
+    refresh_tech_labels();
+}
+
+static void tec_gpio_cb(lv_event_t *e)
+{
+    app_state_t *app = app_state();
+    int sel = (int)lv_dropdown_get_selected(lv_event_get_target(e));
+
+    if (!app->cfg.demo_mode) {
+        tec_note("Cambia a DEMO antes de editar las entradas.");
+        refresh_tech_labels();
+        return;
+    }
+    uint8_t gpio = (sel == 0) ? 0xFF : (uint8_t)s_gpios[sel - 1];
+    for (int i = 0; i < app->cfg.floors; i++) {
+        if (i != (s_sel_floor - 1) && gpio != 0xFF &&
+            app->cfg.floor_gpio[i] == gpio) {
+            tec_note("Ese GPIO ya identifica otro piso.");
+            refresh_tech_labels();
+            return;
+        }
+    }
+    app->cfg.floor_gpio[s_sel_floor - 1] = gpio;
+    app_apply_config();
+    tec_note("Regla GPIO guardada.");
+    refresh_tech_labels();
+}
+
+static void tec_level_cb(lv_event_t *e)
+{
+    app_state_t *app = app_state();
+    if (!app->cfg.demo_mode) {
+        tec_note("Cambia a DEMO antes de editar las entradas.");
+        refresh_tech_labels();
+        return;
+    }
+    app->cfg.floor_level[s_sel_floor - 1] =
+        (uint8_t)lv_dropdown_get_selected(lv_event_get_target(e));
+    app_apply_config();
+    tec_note("Regla GPIO guardada.");
+}
+
+static void create_tecnica(lv_obj_t *scr)
+{
+    make_label(scr, 44, 42, 500, 28, "ASCENSOR / TÉCNICA", &F21, TEC_ACCENT,
+               LV_TEXT_ALIGN_LEFT);
+    make_label(scr, 44, 110, 512, 48, "Configura tu edificio", &F30, TEC_TEXT,
+               LV_TEXT_ALIGN_LEFT);
+
+    lv_obj_t *p = make_panel(scr, 44, 184, 512, 232);
+    make_label(p, 24, 20, 440, 30, "Cantidad de pisos", &F25, TEC_TEXT,
+               LV_TEXT_ALIGN_LEFT);
+    s_tec_count = make_label(p, 24, 64, 170, 56, "", &F59, TEC_ACCENT,
+                             LV_TEXT_ALIGN_LEFT);
+    make_button(p, 272, 58, 90, 64, "-", tec_floors_cb, ID_MINUS, NULL);
+    make_button(p, 386, 58, 90, 64, "+", tec_floors_cb, ID_PLUS, NULL);
+    make_label(p, 24, 154, 220, 24, "Origen de posición", &F21, TEC_MUTED,
+               LV_TEXT_ALIGN_LEFT);
+    s_tec_mode_lbl = make_label(p, 24, 182, 180, 32, "", &F30, TEC_TEXT,
+                                LV_TEXT_ALIGN_LEFT);
+    make_button(p, 248, 150, 230, 60, "MODO DEMO", tec_mode_cb, ID_MODE,
+                &s_tec_mode_btn_lbl);
+
+    make_label(scr, 44, 453, 290, 36, "Regla por piso", &F30, TEC_TEXT,
+               LV_TEXT_ALIGN_LEFT);
+    s_tec_dd_floor = lv_dropdown_create(scr);
+    lv_obj_set_pos(s_tec_dd_floor, 350, 448);
+    lv_obj_set_size(s_tec_dd_floor, 206, 52);
+    style_dropdown(s_tec_dd_floor, &F25);
+    lv_obj_add_event_cb(s_tec_dd_floor, tec_floor_sel_cb,
+                        LV_EVENT_VALUE_CHANGED, NULL);
+
+    lv_obj_t *rule = make_panel(scr, 44, 526, 512, 180);
+    lv_obj_set_style_border_color(rule, lv_color_hex(COL_BLUE_BORDER), 0);
+    make_label(rule, 24, 12, 450, 27, "SI entrada digital", &F25, TEC_ACCENT,
+               LV_TEXT_ALIGN_LEFT);
+    s_tec_dd_gpio = lv_dropdown_create(rule);
+    lv_dropdown_set_options(s_tec_dd_gpio, s_gpio_options);
+    lv_obj_set_pos(s_tec_dd_gpio, 24, 53);
+    lv_obj_set_size(s_tec_dd_gpio, 250, 52);
+    style_dropdown(s_tec_dd_gpio, &F25);
+    lv_obj_add_event_cb(s_tec_dd_gpio, tec_gpio_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
+    s_tec_dd_level = lv_dropdown_create(rule);
+    lv_dropdown_set_options(s_tec_dd_level, "= 0\n= 1");
+    lv_obj_set_pos(s_tec_dd_level, 300, 53);
+    lv_obj_set_size(s_tec_dd_level, 185, 52);
+    style_dropdown(s_tec_dd_level, &F25);
+    lv_obj_add_event_cb(s_tec_dd_level, tec_level_cb, LV_EVENT_VALUE_CHANGED,
+                        NULL);
+
+    s_tec_read = make_label(rule, 24, 126, 460, 32, "", &F25, TEC_TEXT,
+                            LV_TEXT_ALIGN_LEFT);
+
+    lv_obj_t *then = make_panel(scr, 44, 725, 512, 83);
+    lv_obj_set_style_border_color(then, lv_color_hex(COL_OK), 0);
+    s_tec_then = make_label(then, 24, 26, 465, 32, "", &F25, TEC_GREEN,
+                            LV_TEXT_ALIGN_LEFT);
+
+    s_tec_note = make_label(scr, 40, 823, 520, 45, "", &F19, TEC_MUTED,
+                            LV_TEXT_ALIGN_CENTER);
+    make_button(scr, 44, 878, 512, 57, "EDITAR BLOQUES Y NOTAS", open_blocks_cb,
+                ID_EDIT, NULL);
+    make_footer(scr, 2, TEC_ACCENT);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Editor de bloques (pantalla propia, 32 bloques compartidos)       */
+/* ------------------------------------------------------------------ */
 
 static void rebuild_block_rows_async(void *unused)
 {
@@ -364,148 +715,34 @@ static void rebuild_block_rows_async(void *unused)
     rebuild_block_rows();
 }
 
-static void refresh_tech_labels(void)
-{
-    app_state_t *app = app_state();
-    if (s_tech_floors_value != NULL) {
-        lv_label_set_text_fmt(s_tech_floors_value, "%u", app->cfg.floors);
-    }
-    if (s_tech_mode != NULL) {
-        lv_label_set_text(s_tech_mode, app->cfg.demo_mode
-                                       ? "MODO DEMO" : "GPIO REALES");
-    }
-    if (s_tech_blocks_status != NULL) {
-        lv_label_set_text_fmt(s_tech_blocks_status, "BLOQUES ACTIVOS %u/%u",
-                              (unsigned)rules_active_count(),
-                              (unsigned)RULES_MAX_BLOCKS);
-    }
-}
-
-static void rebuild_floor_rows(void)
-{
-    if (s_tech_floor_list == NULL) {
-        return;
-    }
-    lv_obj_clean(s_tech_floor_list);
-
-    app_state_t *app = app_state();
-
-    for (uint8_t f = 1; f <= app->cfg.floors; f++) {
-        lv_obj_t *row = card(s_tech_floor_list, lv_pct(100), 84);
-        lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
-        lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN,
-                              LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-        lv_obj_set_style_pad_column(row, 8, 0);
-
-        char txt[16];
-        snprintf(txt, sizeof(txt), "Piso %u", f);
-        text(row, txt, &lv_font_montserrat_20, COL_TEXT);
-
-        lv_obj_t *dd_gpio = lv_dropdown_create(row);
-        lv_dropdown_set_options(dd_gpio, s_gpio_options);
-        lv_dropdown_set_selected(dd_gpio,
-                                 gpio_to_index(app->cfg.floor_gpio[f - 1]));
-        lv_obj_set_width(dd_gpio, 170);
-        lv_obj_set_style_text_font(dd_gpio, &lv_font_montserrat_14, 0);
-        lv_obj_add_event_cb(dd_gpio, tech_floor_gpio_cb,
-                            LV_EVENT_VALUE_CHANGED, (void *)(uintptr_t)f);
-
-        lv_obj_t *dd_level = lv_dropdown_create(row);
-        lv_dropdown_set_options(dd_level, "NIVEL 0\nNIVEL 1");
-        lv_dropdown_set_selected(dd_level, app->cfg.floor_level[f - 1]);
-        lv_obj_set_width(dd_level, 120);
-        lv_obj_set_style_text_font(dd_level, &lv_font_montserrat_14, 0);
-        lv_obj_add_event_cb(dd_level, tech_floor_level_cb,
-                            LV_EVENT_VALUE_CHANGED, (void *)(uintptr_t)f);
-    }
-}
-
-static void tech_floor_gpio_cb(lv_event_t *e)
-{
-    uint8_t floor = (uint8_t)(uintptr_t)lv_event_get_user_data(e);
-    lv_obj_t *dd = lv_event_get_target(e);
-    int sel = (int)lv_dropdown_get_selected(dd);
-
-    app_state_t *app = app_state();
-    app->cfg.floor_gpio[floor - 1] = (sel == 0) ? 0xFF : (uint8_t)s_gpios[sel - 1];
-
-    /* Un GPIO solo puede identificar un piso */
-    for (int i = 0; i < app->cfg.floors; i++) {
-        if (i != (floor - 1) &&
-            app->cfg.floor_gpio[i] == app->cfg.floor_gpio[floor - 1] &&
-            app->cfg.floor_gpio[i] != 0xFF) {
-            app->cfg.floor_gpio[floor - 1] = 0xFF;
-            lv_async_call(rebuild_floor_rows_async, NULL);
-            ui_show_message("GPIO repetido", "Ese GPIO ya identifica otro piso.");
-            return;
-        }
-    }
-
-    app_apply_config();
-    ui_show_message("Regla GPIO guardada",
-                    "Sensor de piso actualizado. Entradas a 3.3 V.");
-    ui_refresh();
-}
-
-static void tech_floor_level_cb(lv_event_t *e)
-{
-    uint8_t floor = (uint8_t)(uintptr_t)lv_event_get_user_data(e);
-    lv_obj_t *dd = lv_event_get_target(e);
-    app_state_t *app = app_state();
-    app->cfg.floor_level[floor - 1] = (uint8_t)lv_dropdown_get_selected(dd);
-    app_apply_config();
-}
-
-static void tech_floors_minus_cb(lv_event_t *e)
+static void close_blocks_cb(lv_event_t *e)
 {
     (void)e;
-    app_state_t *app = app_state();
-    if (app->cfg.blocks_enabled) {
-        ui_show_message("Pisos bloqueados",
-                        "Desactiva los bloques antes de usar sensores de piso.");
-        return;
-    }
-    if (app->cfg.floors > ELEVATOR_MIN_FLOORS) {
-        app->cfg.floors--;
-        app_apply_config();
-        rebuild_floor_rows();
-        rebuild_interior_buttons();
-        refresh_tech_labels();
-        ui_refresh();
-    }
+    lv_scr_load_anim(s_scr[2], LV_SCR_LOAD_ANIM_OVER_RIGHT, 200, 0, false);
 }
 
-static void tech_floors_plus_cb(lv_event_t *e)
+static void open_blocks_cb(lv_event_t *e)
 {
     (void)e;
-    app_state_t *app = app_state();
-    if (app->cfg.blocks_enabled) {
-        ui_show_message("Pisos bloqueados",
-                        "Desactiva los bloques antes de usar sensores de piso.");
-        return;
-    }
-    if (app->cfg.floors < ELEVATOR_MAX_FLOORS) {
-        app->cfg.floors++;
-        app_apply_config();
-        rebuild_floor_rows();
-        rebuild_interior_buttons();
-        refresh_tech_labels();
-        ui_refresh();
-    }
-}
-
-static void tech_mode_cb(lv_event_t *e)
-{
-    lv_obj_t *sw = lv_event_get_target(e);
-    bool demo = lv_obj_has_state(sw, LV_STATE_CHECKED);
-    app_state_t *app = app_state();
-    app->cfg.demo_mode = demo;
-    app_apply_config();
     refresh_tech_labels();
-    ui_refresh();
+    lv_scr_load_anim(s_scr_blocks, LV_SCR_LOAD_ANIM_OVER_LEFT, 200, 0, false);
 }
 
-static void tech_blocks_sw_cb(lv_event_t *e)
+static bool blocks_editable(void)
+{
+    if (!app_state()->cfg.demo_mode) {
+        ui_show_message("Bloques", "Cambia a DEMO antes de editar bloques.");
+        return false;
+    }
+    if (app_state()->cfg.blocks_enabled) {
+        ui_show_message("Reglas activas",
+                        "Desactiva las reglas para editarlas.");
+        return false;
+    }
+    return true;
+}
+
+static void blk_sw_cb(lv_event_t *e)
 {
     lv_obj_t *sw = lv_event_get_target(e);
     bool on = lv_obj_has_state(sw, LV_STATE_CHECKED);
@@ -521,13 +758,10 @@ static void tech_blocks_sw_cb(lv_event_t *e)
     refresh_tech_labels();
 }
 
-static void tech_add_block_cb(lv_event_t *e)
+static void blk_add_cb(lv_event_t *e)
 {
     (void)e;
-    app_state_t *app = app_state();
-    if (app->cfg.blocks_enabled) {
-        ui_show_message("Reglas activas",
-                        "Desactiva las reglas antes de agregar bloques.");
+    if (!blocks_editable()) {
         return;
     }
     if (app_add_block(NULL) != ESP_OK) {
@@ -540,12 +774,10 @@ static void tech_add_block_cb(lv_event_t *e)
     refresh_tech_labels();
 }
 
-static void block_delete_cb(lv_event_t *e)
+static void blk_delete_cb(lv_event_t *e)
 {
     size_t idx = (size_t)(uintptr_t)lv_event_get_user_data(e);
-    app_state_t *app = app_state();
-    if (app->cfg.blocks_enabled) {
-        ui_show_message("Reglas activas", "Desactiva las reglas para editarlas.");
+    if (!blocks_editable()) {
         return;
     }
     app_remove_block(idx);
@@ -553,13 +785,12 @@ static void block_delete_cb(lv_event_t *e)
     refresh_tech_labels();
 }
 
-static void block_dd_cb(lv_event_t *e)
+static void blk_dd_cb(lv_event_t *e)
 {
     uint32_t packed = (uint32_t)(uintptr_t)lv_event_get_user_data(e);
-    size_t idx  = packed >> 8;
+    size_t idx    = packed >> 8;
     uint8_t field = packed & 0xFF;
-    lv_obj_t *dd = lv_event_get_target(e);
-    int sel = (int)lv_dropdown_get_selected(dd);
+    int sel = (int)lv_dropdown_get_selected(lv_event_get_target(e));
 
     app_state_t *app = app_state();
     if (idx >= app->block_count) {
@@ -568,219 +799,138 @@ static void block_dd_cb(lv_event_t *e)
     rule_block_t *b = &app->blocks[idx];
 
     switch (field) {
-    case 0: b->in_gpio   = (sel == 0) ? 0xFF : (uint8_t)s_gpios[sel - 1]; break;
-    case 1: b->in_level  = (uint8_t)sel; break;
-    case 2: b->out_gpio  = (sel == 0) ? 0xFF : (uint8_t)s_gpios[sel - 1]; break;
-    case 3: b->out_level = (uint8_t)sel; break;
+    case 0: b->in_gpio    = (sel == 0) ? 0xFF : (uint8_t)s_gpios[sel - 1]; break;
+    case 1: b->in_level   = (uint8_t)sel; break;
+    case 2: b->out_gpio   = (sel == 0) ? 0xFF : (uint8_t)s_gpios[sel - 1]; break;
+    case 3: b->out_level  = (uint8_t)sel; break;
     case 4: b->rest_level = (uint8_t)sel; break;
     default: break;
     }
     app_save_blocks();
 }
 
-static lv_obj_t *block_dropdown(lv_obj_t *parent, const char *options,
-                                int selected, size_t idx, uint8_t field)
+static lv_obj_t *blk_dropdown(lv_obj_t *parent, const char *options,
+                              int selected, int w, size_t idx, uint8_t field)
 {
     lv_obj_t *dd = lv_dropdown_create(parent);
     lv_dropdown_set_options(dd, options);
     lv_dropdown_set_selected(dd, selected);
-    lv_obj_set_style_text_font(dd, &lv_font_montserrat_14, 0);
-    lv_obj_add_event_cb(dd, block_dd_cb, LV_EVENT_VALUE_CHANGED,
+    lv_obj_set_width(dd, w);
+    style_dropdown(dd, &F21);
+    lv_obj_add_event_cb(dd, blk_dd_cb, LV_EVENT_VALUE_CHANGED,
                         (void *)(uintptr_t)((idx << 8) | field));
     return dd;
 }
 
+static lv_obj_t *blk_text(lv_obj_t *parent, const char *txt, uint32_t color)
+{
+    lv_obj_t *l = lv_label_create(parent);
+    lv_label_set_text(l, txt);
+    lv_obj_set_style_text_font(l, &F19, 0);
+    lv_obj_set_style_text_color(l, lv_color_hex(color), 0);
+    return l;
+}
+
 static void rebuild_block_rows(void)
 {
-    if (s_tech_block_list == NULL) {
+    if (s_blk_list == NULL) {
         return;
     }
-    lv_obj_clean(s_tech_block_list);
-
+    lv_obj_clean(s_blk_list);
     app_state_t *app = app_state();
 
     for (size_t i = 0; i < app->block_count; i++) {
         rule_block_t *b = &app->blocks[i];
 
-        lv_obj_t *box = card(s_tech_block_list, lv_pct(100), LV_SIZE_CONTENT);
+        lv_obj_t *box = make_panel(s_blk_list, 0, 0, 512, LV_SIZE_CONTENT);
+        lv_obj_set_width(box, 512);
         lv_obj_set_flex_flow(box, LV_FLEX_FLOW_COLUMN);
-        lv_obj_set_style_pad_row(box, 8, 0);
+        lv_obj_set_style_pad_all(box, 14, 0);
+        lv_obj_set_style_pad_row(box, 10, 0);
 
         lv_obj_t *head = lv_obj_create(box);
         lv_obj_remove_style_all(head);
-        lv_obj_set_size(head, lv_pct(100), 40);
+        lv_obj_set_size(head, lv_pct(100), 48);
         lv_obj_set_flex_flow(head, LV_FLEX_FLOW_ROW);
         lv_obj_set_flex_align(head, LV_FLEX_ALIGN_SPACE_BETWEEN,
                               LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
         char title[32];
-        snprintf(title, sizeof(title), "Piso %u / Bloque %u",
-                 (unsigned)(i + 1), (unsigned)(i + 1));
-        text(head, title, &lv_font_montserrat_20, COL_TEXT);
-
-        lv_obj_t *del = button(head, "ELIMINAR", 130, 40, false);
-        lv_obj_add_event_cb(del, block_delete_cb, LV_EVENT_CLICKED,
-                            (void *)(uintptr_t)i);
+        snprintf(title, sizeof(title), "Bloque %u", (unsigned)(i + 1));
+        lv_obj_t *t = blk_text(head, title, TEC_TEXT);
+        lv_obj_set_style_text_font(t, &F25, 0);
+        make_button(head, 0, 0, 140, 44, "ELIMINAR", blk_delete_cb, (intptr_t)i,
+                    NULL);
+        lv_obj_set_pos(lv_obj_get_child(head, 1), 0, 0);
 
         lv_obj_t *row = lv_obj_create(box);
         lv_obj_remove_style_all(row);
         lv_obj_set_width(row, lv_pct(100));
         lv_obj_set_height(row, LV_SIZE_CONTENT);
         lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW_WRAP);
+        lv_obj_set_flex_align(row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER,
+                              LV_FLEX_ALIGN_CENTER);
         lv_obj_set_style_pad_row(row, 8, 0);
-        lv_obj_set_style_pad_column(row, 6, 0);
+        lv_obj_set_style_pad_column(row, 8, 0);
 
-        text(row, "SI", &lv_font_montserrat_14, COL_MUTED);
-        lv_obj_t *in_dd = block_dropdown(row, s_gpio_options,
-                                         gpio_to_index(b->in_gpio), i, 0);
-        lv_obj_set_width(in_dd, 150);
-
-        lv_obj_t *lvl = block_dropdown(row, "ES IGUAL A 0\nES IGUAL A 1",
-                                       b->in_level, i, 1);
-        lv_obj_set_width(lvl, 150);
-
-        text(row, "ENTONCES", &lv_font_montserrat_14, COL_MUTED);
-        lv_obj_t *out_dd = block_dropdown(row, s_gpio_options,
-                                          gpio_to_index(b->out_gpio), i, 2);
-        lv_obj_set_width(out_dd, 150);
-
-        lv_obj_t *out_lvl = block_dropdown(row, "ESCRIBIR 0\nESCRIBIR 1",
-                                           b->out_level, i, 3);
-        lv_obj_set_width(out_lvl, 140);
-
-        text(row, "REPOSO", &lv_font_montserrat_14, COL_MUTED);
-        lv_obj_t *rest = block_dropdown(row, "REPOSO 0\nREPOSO 1",
-                                        b->rest_level, i, 4);
-        lv_obj_set_width(rest, 130);
+        blk_text(row, "SI", TEC_MUTED);
+        blk_dropdown(row, s_gpio_options, gpio_to_index(b->in_gpio), 170, i, 0);
+        blk_dropdown(row, "ES IGUAL A 0\nES IGUAL A 1", b->in_level, 190, i, 1);
+        blk_text(row, "ENTONCES", TEC_MUTED);
+        blk_dropdown(row, s_gpio_options, gpio_to_index(b->out_gpio), 170, i, 2);
+        blk_dropdown(row, "ESCRIBIR 0\nESCRIBIR 1", b->out_level, 190, i, 3);
+        blk_text(row, "REPOSO", TEC_MUTED);
+        blk_dropdown(row, "= 0\n= 1", b->rest_level, 110, i, 4);
 
         if (b->note[0] != '\0') {
-            text(box, b->note, &lv_font_montserrat_14, COL_MUTED);
+            blk_text(box, b->note, TEC_MUTED);
         }
     }
 
     if (app->block_count == 0) {
-        text(s_tech_block_list, "Sin bloques. Usa + Agregar condicional.",
-             &lv_font_montserrat_14, COL_MUTED);
+        blk_text(s_blk_list, "Sin bloques. Usa + Agregar condicional.", TEC_MUTED);
     }
 }
 
-static void create_tecnica(lv_obj_t *tile)
+static void create_blocks_screen(void)
 {
-    lv_obj_t *col = column(tile);
-    lv_obj_add_flag(col, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_height(col, lv_pct(100));
+    lv_obj_t *scr = lv_obj_create(NULL);
+    lv_obj_remove_style_all(scr);
+    lv_obj_set_size(scr, SCREEN_W, SCREEN_H);
+    lv_obj_set_style_bg_color(scr, lv_color_hex(COL_BLACK), 0);
+    lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
+    lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
+    s_scr_blocks = scr;
 
-    text(col, "ASCENSOR / TECNICA", &lv_font_montserrat_20, COL_MUTED);
-    text(col, "Configura tu edificio", &lv_font_montserrat_14, COL_TEXT);
+    make_label(scr, 44, 42, 330, 28, "EDITAR BLOQUES Y NOTAS", &F21, TEC_ACCENT,
+               LV_TEXT_ALIGN_LEFT);
+    make_button(scr, 420, 30, 136, 50, "VOLVER", close_blocks_cb, 0, NULL);
 
-    /* Cantidad de pisos */
-    lv_obj_t *floors = card(col, lv_pct(100), 90);
-    lv_obj_set_flex_flow(floors, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(floors, LV_FLEX_ALIGN_SPACE_BETWEEN,
-                          LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_t *head = make_panel(scr, 44, 100, 512, 120);
+    make_label(head, 24, 14, 330, 30, "Programación por bloques", &F25, TEC_TEXT,
+               LV_TEXT_ALIGN_LEFT);
+    s_blk_sw = lv_switch_create(head);
+    lv_obj_set_pos(s_blk_sw, 400, 14);
+    lv_obj_set_size(s_blk_sw, 90, 46);
+    lv_obj_add_event_cb(s_blk_sw, blk_sw_cb, LV_EVENT_VALUE_CHANGED, NULL);
+    s_blk_status = make_label(head, 24, 70, 460, 28, "", &F21, TEC_MUTED,
+                              LV_TEXT_ALIGN_LEFT);
+    make_button(scr, 44, 234, 512, 60, "+ Agregar condicional a este piso",
+                blk_add_cb, 0, NULL);
 
-    text(floors, "Cantidad de pisos", &lv_font_montserrat_20, COL_TEXT);
-
-    lv_obj_t *ctrl = lv_obj_create(floors);
-    lv_obj_remove_style_all(ctrl);
-    lv_obj_set_size(ctrl, 210, 60);
-    lv_obj_set_flex_flow(ctrl, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(ctrl, LV_FLEX_ALIGN_SPACE_BETWEEN,
-                          LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
-    lv_obj_t *minus = button(ctrl, "-", 60, 56, false);
-    s_tech_floors_value = text(ctrl, "4", &lv_font_montserrat_28, COL_TEXT);
-    lv_obj_t *plus = button(ctrl, "+", 60, 56, false);
-    lv_obj_add_event_cb(minus, tech_floors_minus_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_add_event_cb(plus, tech_floors_plus_cb, LV_EVENT_CLICKED, NULL);
-
-    /* Origen de posicion */
-    lv_obj_t *mode = card(col, lv_pct(100), 90);
-    lv_obj_set_flex_flow(mode, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(mode, LV_FLEX_ALIGN_SPACE_BETWEEN,
-                          LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-
-    lv_obj_t *mode_col = lv_obj_create(mode);
-    lv_obj_remove_style_all(mode_col);
-    lv_obj_set_flex_flow(mode_col, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_width(mode_col, lv_pct(60));
-    text(mode_col, "Origen de posicion", &lv_font_montserrat_20, COL_TEXT);
-    s_tech_mode = text(mode_col, "MODO DEMO", &lv_font_montserrat_14, COL_MUTED);
-
-    s_tech_mode_sw = lv_switch_create(mode);
-    lv_obj_set_size(s_tech_mode_sw, 90, 50);
-    lv_obj_add_event_cb(s_tech_mode_sw, tech_mode_cb, LV_EVENT_VALUE_CHANGED,
-                        NULL);
-
-    /* Regla por piso */
-    text(col, "Regla por piso", &lv_font_montserrat_20, COL_TEXT);
-    s_tech_floor_list = lv_obj_create(col);
-    lv_obj_remove_style_all(s_tech_floor_list);
-    lv_obj_set_width(s_tech_floor_list, lv_pct(100));
-    lv_obj_set_height(s_tech_floor_list, LV_SIZE_CONTENT);
-    lv_obj_set_flex_flow(s_tech_floor_list, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(s_tech_floor_list, 8, 0);
-
-    /* Bloques */
-    lv_obj_t *blocks = card(col, lv_pct(100), 150);
-    lv_obj_set_flex_flow(blocks, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(blocks, 6, 0);
-
-    lv_obj_t *blocks_head = lv_obj_create(blocks);
-    lv_obj_remove_style_all(blocks_head);
-    lv_obj_set_size(blocks_head, lv_pct(100), 50);
-    lv_obj_set_flex_flow(blocks_head, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(blocks_head, LV_FLEX_ALIGN_SPACE_BETWEEN,
-                          LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    text(blocks_head, "Programacion por bloques",
-         &lv_font_montserrat_20, COL_TEXT);
-
-    s_tech_blocks_sw = lv_switch_create(blocks_head);
-    lv_obj_set_size(s_tech_blocks_sw, 90, 50);
-    lv_obj_add_event_cb(s_tech_blocks_sw, tech_blocks_sw_cb,
-                        LV_EVENT_VALUE_CHANGED, NULL);
-
-    s_tech_blocks_status = text(blocks, "BLOQUES ACTIVOS 0/32",
-                                &lv_font_montserrat_14, COL_MUTED);
-
-    lv_obj_t *add = button(col, "+ Agregar condicional a este piso",
-                           lv_pct(100), 70, true);
-    lv_obj_add_event_cb(add, tech_add_block_cb, LV_EVENT_CLICKED, NULL);
-
-    s_tech_block_list = lv_obj_create(col);
-    lv_obj_remove_style_all(s_tech_block_list);
-    lv_obj_set_width(s_tech_block_list, lv_pct(100));
-    lv_obj_set_height(s_tech_block_list, LV_SIZE_CONTENT);
-    lv_obj_set_flex_flow(s_tech_block_list, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(s_tech_block_list, 10, 0);
+    s_blk_list = lv_obj_create(scr);
+    lv_obj_remove_style_all(s_blk_list);
+    lv_obj_set_pos(s_blk_list, 44, 308);
+    lv_obj_set_size(s_blk_list, 512, 690);
+    lv_obj_set_flex_flow(s_blk_list, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_row(s_blk_list, 12, 0);
+    lv_obj_add_flag(s_blk_list, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scroll_dir(s_blk_list, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(s_blk_list, LV_SCROLLBAR_MODE_OFF);
 }
 
 /* ------------------------------------------------------------------ */
 /*  Creacion y refresco                                               */
 /* ------------------------------------------------------------------ */
-
-static void init_styles(void)
-{
-    lv_style_init(&s_st_card);
-    lv_style_set_bg_color(&s_st_card, lv_color_hex(COL_CARD));
-    lv_style_set_bg_opa(&s_st_card, LV_OPA_COVER);
-    lv_style_set_radius(&s_st_card, 14);
-    lv_style_set_border_width(&s_st_card, 1);
-    lv_style_set_border_color(&s_st_card, lv_color_hex(COL_BORDER));
-    lv_style_set_pad_all(&s_st_card, 14);
-
-    lv_style_init(&s_st_btn);
-    lv_style_set_bg_color(&s_st_btn, lv_color_hex(COL_CARD));
-    lv_style_set_bg_opa(&s_st_btn, LV_OPA_COVER);
-    lv_style_set_radius(&s_st_btn, 12);
-    lv_style_set_border_width(&s_st_btn, 1);
-    lv_style_set_border_color(&s_st_btn, lv_color_hex(COL_BORDER));
-
-    lv_style_init(&s_st_btn_accent);
-    lv_style_set_bg_color(&s_st_btn_accent, lv_color_hex(COL_ACCENT));
-    lv_style_set_bg_opa(&s_st_btn_accent, LV_OPA_COVER);
-    lv_style_set_radius(&s_st_btn_accent, 12);
-}
 
 esp_err_t ui_create(void)
 {
@@ -788,38 +938,28 @@ esp_err_t ui_create(void)
         return ESP_ERR_TIMEOUT;
     }
 
+    init_fonts();
     build_gpio_options();
-    init_styles();
 
-    lv_obj_t *scr = lv_scr_act();
-    lv_obj_set_style_bg_color(scr, lv_color_hex(COL_BG), 0);
-    lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, 0);
-
-    s_tv = lv_tileview_create(scr);
-    lv_obj_set_size(s_tv, SCREEN_W, SCREEN_H);
-    lv_obj_set_style_bg_color(s_tv, lv_color_hex(COL_BG), 0);
-    lv_obj_set_style_bg_opa(s_tv, LV_OPA_COVER, 0);
-    lv_obj_set_style_pad_all(s_tv, PAD, 0);
-
-    lv_obj_t *t1 = lv_tileview_add_tile(s_tv, 0, 0, LV_DIR_BOTTOM);
-    lv_obj_t *t2 = lv_tileview_add_tile(s_tv, 0, 1, LV_DIR_TOP | LV_DIR_BOTTOM);
-    lv_obj_t *t3 = lv_tileview_add_tile(s_tv, 0, 2, LV_DIR_TOP);
-
-    create_exterior(t1);
-    create_interior(t2);
-    create_tecnica(t3);
+    for (int i = 0; i < 3; i++) {
+        s_scr[i] = new_screen();
+    }
+    create_exterior(s_scr[0]);
+    create_interior(s_scr[1]);
+    create_tecnica(s_scr[2]);
+    create_blocks_screen();
 
     rebuild_interior_buttons();
-    rebuild_floor_rows();
+    rebuild_floor_dropdown();
     rebuild_block_rows();
     refresh_tech_labels();
 
-    if (app_state()->cfg.demo_mode) {
-        lv_obj_add_state(s_tech_mode_sw, LV_STATE_CHECKED);
-    }
     if (app_state()->cfg.blocks_enabled) {
-        lv_obj_add_state(s_tech_blocks_sw, LV_STATE_CHECKED);
+        lv_obj_add_state(s_blk_sw, LV_STATE_CHECKED);
     }
+
+    s_cur_scr = 0;
+    lv_scr_load(s_scr[0]);
 
     board_unlock();
     return ESP_OK;
@@ -832,11 +972,8 @@ static void update_floor_button_states(const elevator_state_t *st)
         if (btn == NULL) {
             continue;
         }
-        if ((f + 1) == st->current_floor) {
-            lv_obj_set_style_bg_color(btn, lv_color_hex(COL_ACCENT), 0);
-        } else {
-            lv_obj_set_style_bg_color(btn, lv_color_hex(COL_CARD), 0);
-        }
+        bool here = (f + 1) == st->current_floor;
+        lv_obj_set_style_bg_color(btn, lv_color_hex(here ? COL_CALL : COL_BTN), 0);
     }
 }
 
@@ -849,52 +986,55 @@ void ui_refresh(void)
     elevator_state_t st;
     elevator_get_state(&st);
 
-    char buf[48];
+    char buf[64];
 
     /* Exterior */
-    if (s_ext_user_floor != NULL) {
-        snprintf(buf, sizeof(buf), "P%02u", s_user_floor);
-        lv_label_set_text(s_ext_user_floor, buf);
+    snprintf(buf, sizeof(buf), "P%02u", s_user_floor);
+    lv_label_set_text(s_ext_user_floor, buf);
+
+    if (st.position_known) {
+        snprintf(buf, sizeof(buf), "P%02u", st.current_floor);
+    } else {
+        snprintf(buf, sizeof(buf), "--");
     }
-    if (s_ext_cabin_floor != NULL) {
-        if (st.position_known) {
-            snprintf(buf, sizeof(buf), "P%02u", st.current_floor);
-        } else {
-            snprintf(buf, sizeof(buf), "--");
-        }
-        lv_label_set_text(s_ext_cabin_floor, buf);
+    lv_label_set_text(s_ext_cabin_floor, buf);
+
+    const char *dir_txt;
+    if (st.dir == ELEV_DIR_UP) {
+        snprintf(buf, sizeof(buf), "%s · P%02u", "SUBIENDO", st.current_floor);
+        dir_txt = buf;
+    } else if (st.dir == ELEV_DIR_DOWN) {
+        snprintf(buf, sizeof(buf), "%s · P%02u", "BAJANDO", st.current_floor);
+        dir_txt = buf;
+    } else {
+        dir_txt = st.doors_open ? "DETENIDO · PUERTAS ABIERTAS"
+                                : "DETENIDO · PUERTAS CERRADAS";
     }
-    if (s_ext_dir != NULL) {
-        const char *txt;
-        if (st.doors_open) {
-            txt = "DETENIDO - PUERTAS ABIERTAS";
-        } else if (st.dir == ELEV_DIR_UP) {
-            txt = "SUBIENDO";
-        } else if (st.dir == ELEV_DIR_DOWN) {
-            txt = "BAJANDO";
-        } else {
-            txt = "DETENIDO - PUERTAS CERRADAS";
-        }
-        lv_label_set_text(s_ext_dir, txt);
-        lv_obj_set_style_text_color(s_ext_dir,
-            lv_color_hex(st.dir == ELEV_DIR_IDLE ? COL_WARN : COL_OK), 0);
-    }
+    lv_label_set_text(s_ext_dir, dir_txt);
+    lv_obj_set_style_text_color(
+        s_ext_dir, lv_color_hex(st.dir == ELEV_DIR_IDLE ? EXT_MUTED : COL_OK), 0);
+
+    lv_label_set_text(s_ext_arrow,
+                      st.dir == ELEV_DIR_UP ? LV_SYMBOL_UP
+                      : st.dir == ELEV_DIR_DOWN ? LV_SYMBOL_DOWN : "");
+    lv_obj_set_style_text_color(s_ext_arrow, lv_color_hex(COL_OK), 0);
 
     /* Interior */
-    if (s_int_current != NULL) {
-        if (st.position_known) {
-            snprintf(buf, sizeof(buf), "P%02u", st.current_floor);
-        } else {
-            snprintf(buf, sizeof(buf), "--");
-        }
-        lv_label_set_text(s_int_current, buf);
+    if (st.position_known) {
+        snprintf(buf, sizeof(buf), "P%02u", st.current_floor);
+    } else {
+        snprintf(buf, sizeof(buf), "--");
     }
+    lv_label_set_text(s_int_current, buf);
+    lv_label_set_text(s_int_dir,
+                      st.dir == ELEV_DIR_UP ? "subiendo"
+                      : st.dir == ELEV_DIR_DOWN ? "bajando" : "");
     update_floor_button_states(&st);
 
     int changed = memcmp(&st, &s_last_state, sizeof(st)) != 0;
-    if (changed && !st.position_known && !st.demo_mode && s_int_status != NULL) {
+    if (changed && !st.position_known && !st.demo_mode) {
         lv_label_set_text(s_int_status,
-                          "Posicion sin confirmar: espera un sensor de piso.");
+                          "Posición sin confirmar: espera un sensor de piso.");
     }
     s_last_state = st;
 
@@ -906,11 +1046,12 @@ void ui_on_event(const elevator_event_t *ev)
     if (ev == NULL) {
         return;
     }
-    if (ev->message != NULL && s_int_status != NULL) {
+    if (ev->message != NULL) {
         if (!board_lock(100)) {
             return;
         }
         lv_label_set_text(s_int_status, ev->message);
+        lv_label_set_text(s_ext_hint, ev->message);
         board_unlock();
     }
     if (ev->type == ELEV_EVT_ARRIVED) {

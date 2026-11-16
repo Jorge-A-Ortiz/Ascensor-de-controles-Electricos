@@ -1,0 +1,1186 @@
+40013702 STORE sb x0,-1582(x15)  val=0
+40013706 c.j 0x400136d6
+4001371e call label_create(?, ?, ?, ?, ?, ?, ?, ?)
+40013726 call label_set_text(R1, ?, ?, ?, ?, ?, ?, ?)
+40013730 call set_pos(R1, ?, ?, ?, ?, ?, ?, ?)
+4001373a call set_size(R1, ?, ?, ?, ?, ?, ?, ?)
+40013744 call text_font(R1, ?, 0, ?, ?, ?, ?, ?)
+4001376c call text_color(R1, ?, 0, ?, ?, ?, ?, ?)
+40013774 call label_long_mode(R1, 0, ?, ?, ?, ?, ?, ?)
+40013782 c.jr x1
+40013784 jal 0x40018822
+400137b8 STORE sb x14,-1604(x8)  val=1
+400137c2 bne x14,x12,0x400137ca
+400137cc bne x13,x15,0x400137be
+400137dc call 0x40047e06(?, ?, ?, '4', ?, 0x4ff18000, ?, ?)
+400137fa call 0x40047e06(?, ?, ?, ?, 0x4ff18000, ?, ?, ?)
+40013800 STORE sb x0,-1604(x8)  val=0
+4001380a c.jr x1
+4001382c c.beqz x15,0x4001384e
+40013840 call snprintf(?, 128, 'P%02u', ?, ?, ?, ?, ?)
+4001384a call label_set_text(?, ?, ?, ?, ?, ?, ?, ?)
+40013856 c.beqz x15,0x40013876
+4001385c bne x15,x0,0x40013b92
+40013872 call label_set_text(?, ?, ?, ?, ?, 0x9480e2, ?, ?)
+4001387e c.beqz x15,0x400138a0
+40013892 call snprintf(?, 128, 'P%02u', ?, ?, ?, ?, ?)
+4001389c call label_set_text(?, ?, ?, ?, ?, ?, ?, ?)
+400138a8 c.beqz x10,0x400138e8
+400138ae bne x15,x0,0x40013b76
+400138ba call label_set_text(?, '·', ?, ?, ?, ?, ?, ?)
+400138cc c.beqz x15,0x400138e2
+400138d8 bge x0,x15,0x400138e2
+400138e4 call text_color(?, 0x76b4, 0, ?, ?, ?, ?, ?)
+400138f0 c.beqz x10,0x400138fa
+400138f6 call label_set_text(?, ?, ?, ?, ?, 0x4ff18000, ?, ?)
+40013902 c.beqz x15,0x4001393e
+40013908 beq x15,x0,0x40013bb6
+40013910 bge x0,x15,0x40013c14
+40013930 call snprintf(?, 128, '%s · P%02u', 'SUBIENDO', ?, ?, ?, ?)
+4001393a call label_set_text(?, ?, ?, ?, ?, ?, ?, ?)
+40013946 c.beqz x15,0x40013968
+4001395a call snprintf(?, 128, 'P%02u', ?, ?, ?, ?, ?)
+40013964 call label_set_text(?, ?, ?, ?, ?, ?, ?, ?)
+40013974 c.beqz x15,0x4001399e
+4001397a bne x15,x0,0x40013b88
+40013990 call snprintf(?, 128, 'Piso %u', ?, ?, ?, ?, ?)
+4001399a call label_set_text(?, ?, ?, ?, ?, ?, ?, ?)
+400139a6 c.beqz x15,0x400139cc
+400139be call snprintf(?, 128, 'Piso detectado: %u · %s', ?, ?, ?, ?, ?)
+400139c8 call label_set_text(?, ?, ?, ?, ?, ?, ?, ?)
+400139d4 c.beqz x15,0x40013a3c
+400139e8 blt x10,x0,0x40013bac
+400139f0 bne x15,x0,0x40013c28
+40013a0a call snprintf(?, 128, 'Lectura: %s', 'modo demo', ?, ?, ?, ?)
+40013a14 call label_set_text(?, ?, ?, ?, ?, ?, ?, ?)
+40013a2a call snprintf(?, 128, 'ENTONCES piso %u + encender su luz', ?, ?, ?, ?, ?)
+40013a38 call label_set_text(?, ?, ?, ?, ?, 0x4ff18000, ?, ?)
+40013a42 beq x14,x15,0x40013bea
+40013a6e beq x15,x0,0x40013b50
+40013a78 c.beqz x15,0x40013a8e
+40013a82 c.bnez x15,0x40013a8e
+40013a8a beq x15,x18,0x40013b1e
+40013a8e c.beqz x10,0x40013aa6
+40013a94 call bg_color(?, 0x1106, 0, ?, ?, ?, ?, ?)
+40013aa2 call border_color(?, 0x29a8, 0, ?, ?, ?, ?, ?)
+40013aa8 c.beqz x15,0x40013afc
+40013aae c.beqz x15,0x40013ab8
+40013ab4 beq x15,x18,0x40013b32
+40013abc c.beqz x15,0x40013b68
+40013ac2 c.beqz x15,0x40013ad6
+40013acc c.bnez x15,0x40013ad6
+40013ad2 beq x15,x18,0x40013b32
+40013adc call bg_color(?, 0x1106, 0, ?, ?, ?, ?, ?)
+40013aea call border_color(?, 0x29a8, 0, ?, ?, ?, ?, ?)
+40013af8 call text_color(?, 0xef9e, 0, ?, ?, ?, ?, ?)
+40013b04 bne x18,x15,0x40013a6a
+40013b1c c.jr x1
+40013b1e c.beqz x10,0x40013aa6
+40013b24 call bg_color(R34, ?, 0, ?, ?, 25, ?, ?)
+40013b30 c.j 0x40013aa0
+40013b38 call bg_color(?, ?, 0, ?, ?, ?, ?, ?)
+40013b42 call border_color(?, ?, 0, ?, ?, ?, ?, ?)
+40013b4e c.j 0x40013af6
+40013b50 call 0x400175c8(?, 0xf5c9, ?, ?, ?, ?, ?, ?)
+40013b54 bne x10,x0,0x40013a72
+40013b5c c.beqz x15,0x40013a84
+40013b60 c.bnez x10,0x40013a90
+40013b64 c.bnez x15,0x40013ab0
+40013b66 c.j 0x40013afc
+40013b68 call 0x400175c8(?, ?, ?, ?, ?, ?, ?, ?)
+40013b6c c.bnez x10,0x40013abe
+40013b72 c.beqz x15,0x40013ace
+40013b74 c.j 0x40013ad6
+40013b7a bge x0,x15,0x40013c1e
+40013b86 c.j 0x400138ba
+40013b90 c.j 0x40013986
+40013ba6 call snprintf(?, 128, 'P%02u', ?, ?, ?, ?, ?)
+40013baa c.j 0x4001386c
+40013bb4 c.j 0x400139fc
+40013be4 STORE sb x15,28(x2)  val=?
+40013be8 c.j 0x40013934
+40013bf2 beq x10,x0,0x40013a46
+40013bf8 call 0x4002ce12(?, 0, ?, ?, ?, 0x4ff18000, ?, ?)
+40013c02 c.beqz x15,0x40013c42
+40013c0e call label_set_text(R41, 'GPIO REALES', ?, ?, ?, ?, ?, ?)
+40013c12 c.j 0x40013a46
+40013c1c c.j 0x4001391c
+40013c26 c.j 0x400138ba
+40013c28 call 0x400585c4(R42, 0x40084a2c, ?, 'BAJANDO', ?, ?, ?, ?)
+40013c2c c.beqz x10,0x40013c38
+40013c36 c.j 0x400139fc
+40013c40 c.j 0x400139fc
+40013c42 call 0x400175c8(R43, ?, ?, '0', ?, ?, ?, ?)
+40013c46 c.beqz x10,0x40013c52
+40013c50 c.j 0x40013c0c
+40013c5a c.j 0x40013c0c
+40013c5c c.beqz x10,0x40013d0c
+40013c66 bltu x14,x10,0x40013d0c
+40013c78 c.beqz x14,0x40013d0e
+40013c82 bne x14,x0,0x40013d78
+40013c8a c.bnez x14,0x40013d1c
+40013c90 beq x14,x0,0x40013d78
+40013c98 beq x14,x13,0x40013cb4
+40013ca0 beq x14,x13,0x40013cb4
+40013cb0 beq x14,x0,0x40013dc8
+40013ce2 STORE sw x30,0(x15)  val=?
+40013ce6 STORE sw x29,4(x15)  val=?
+40013cea STORE sw x28,8(x15)  val=?
+40013cee STORE sw x6,12(x15)  val=?
+40013cf2 STORE sw x17,16(x15)  val=?
+40013cf6 STORE sw x16,20(x15)  val=?
+40013cfa STORE c.sw x10,24(x15)  val=?
+40013cfc STORE c.sw x11,28(x15)  val=?
+40013cfe STORE c.sw x12,32(x15)  val=?
+40013d00 STORE c.sw x13,36(x15)  val=?
+40013d02 STORE c.sw x14,40(x15)  val=?
+40013d08 jal 0x4001380c
+40013d0c c.jr x1
+40013d10 call 0x400175c8(?, ?, ?, ?, ?, ?, ?, ?)
+40013d1a c.bnez x10,0x40013c7a
+40013d20 c.bnez x14,0x40013c94
+40013d26 beq x14,x13,0x40013de6
+40013d2a STORE sb x13,3(x15)  val=?
+40013d2e bgeu x14,x13,0x40013dbc
+40013d3c STORE sb x12,8(x15)  val=1
+40013d50 STORE sb x16,10(x15)  val=1
+40013d54 call snprintf(?, 72, 'Llamada P%02u · %s', ?, 'subiendo', ?, 1, ?)
+40013d6a call snprintf(?, 72, '%s', ?, ?, ?, ?, ?)
+40013d6e call 0x4001380c(R47, ?, ?, ?, ?, ?, ?, ?)
+40013d76 c.jr x1
+40013d92 STORE sw x16,0(x14)  val=?
+40013d96 STORE c.sw x10,4(x14)  val=?
+40013d98 STORE c.sw x11,8(x14)  val=?
+40013d9a STORE c.sw x12,12(x14)  val=?
+40013da0 bne x15,x13,0x40013d88
+40013dac STORE sh x13,0(x14)  val=?
+40013db0 STORE sb x15,2(x14)  val=?
+40013db8 jal 0x4001380c
+40013dc6 c.j 0x40013d3c
+40013dde STORE c.sw x14,4(x15)  val=?
+40013de0 call snprintf(?, 72, 'Parada P%02u agregada a la ruta.', ?, ?, ?, ?, ?)
+40013de4 c.j 0x40013d58
+40013e0e STORE sw x28,0(x15)  val=?
+40013e12 STORE sw x6,4(x15)  val=?
+40013e16 STORE sw x17,8(x15)  val=?
+40013e1a STORE sw x16,12(x15)  val=?
+40013e1e STORE c.sw x10,16(x15)  val=?
+40013e20 STORE c.sw x11,20(x15)  val=?
+40013e22 STORE c.sw x12,24(x15)  val=?
+40013e24 STORE c.sw x13,28(x15)  val=?
+40013e26 STORE sb x14,32(x15)  val=?
+40013e2e jal 0x4001380c
+40013e36 call 0x40023b5c(?, ?, ?, ?, ?, ?, ?, ?)
+40013e3a call 0x40047e50(R50, ?, ?, ?, ?, ?, ?, ?)
+40013e40 STORE sb x10,-1819(x3)  val=?
+40013e44 call 0x40013788(?, ?, ?, ?, ?, ?, ?, ?)
+40013e4c jal 0x4001380c
+40013e5e call 0x4002cd92(?, ?, ?, ?, ?, ?, ?, ?)
+40013e62 STORE sw x0,-1536(x8)  val=0
+40013e6c jal 0x4001380c
+40013e80 call 0x4000f782('elevator', 1, ?, ?, ?, ?, ?, ?)
+40013e84 c.beqz x10,0x40013e8c
+40013e8a c.jr x1
+40013e9a call 0x4000f826(?, 'floors', ?, ?, ?, ?, ?, ?)
+40013ea0 c.beqz x10,0x40013ee0
+40013ea8 jalr x1,-1558(x1)
+40013eb0 call 0x4005b9e0(?, ?, ?, ?, ?, R55, ?, ?)
+40013ed0 jalr x1,-1862(x1)
+40013ed6 call 0x4000f7c0(?, 'ASCENSOR', 0x40084c2c, ?, 'ASCENSOR', R56, ?, ?)
+40013ede c.jr x1
+40013ef4 call 0x4000f8d8(?, 'floor_gpio', 0x4ff16344, 25, ?, ?, ?, ?)
+40013efa c.bnez x10,0x40013ea2
+40013f10 call 0x4000f8d8(?, 'floor_level', 0x4ff16328, 25, ?, R58, ?, ?)
+40013f16 c.bnez x10,0x40013ea2
+40013f1a call 0x4000f884(?, ?, ?, ?, ?, R59, ?, ?)
+40013f20 c.beqz x10,0x40013ed4
+40013f22 c.j 0x40013ea2
+40013f30 c.beqz x15,0x40013f6a
+40013f3a c.bnez x14,0x40013f86
+40013f40 c.beqz x14,0x40013f86
+40013f4a c.bnez x14,0x40013f86
+40013f4c call 0x40013512(R60, ?, ?, ?, ?, ?, ?, ?)
+40013f50 c.beqz x10,0x40013f86
+40013f5a beq x15,x10,0x40013f86
+40013f66 jal 0x40013c5c
+40013f6a call 0x400175c8(?, ?, ?, ?, ?, ?, ?, ?)
+40013f6e c.bnez x10,0x40013f32
+40013f78 c.bnez x14,0x40013f8c
+40013f7e c.beqz x14,0x40014026
+40013f82 STORE sb x14,9(x15)  val=?
+40013f8a c.jr x1
+40013f96 bge x0,x14,0x4001403e
+40013f9e blt x13,x14,0x4001403e
+40013fb0 STORE sb x14,1(x15)  val=?
+40013fb6 STORE sb x14,-1820(x3)  val=?
+40013fba c.beqz x12,0x40014096
+40013fc8 STORE c.sw x14,4(x15)  val=?
+40013fca call 0x40018846(R62, ?, 1, ?, ?, ?, ?, ?)
+40013fdc beq x13,x14,0x40013fec
+40013fea STORE c.sw x12,4(x15)  val=?
+40013ffe STORE sb x0,3(x15)  val=0
+40014002 STORE sb x0,10(x15)  val=0
+40014006 STORE sh x14,8(x15)  val=0x100
+4001400a call snprintf(?, 72, 'Llegada a P%02u · cabina detenida.', ?, 0x100, ?, ?, ?)
+40014020 call snprintf(?, 72, '%s', ?, ?, ?, ?, ?)
+40014024 c.j 0x400140a2
+40014026 call 0x40013512(R65, ?, ?, ?, ?, ?, ?, ?)
+40014032 c.bnez x10,0x400140ae
+40014034 c.beqz x14,0x40013f86
+4001403a jal 0x4001380c
+4001406c STORE sb x0,10(x15)  val=0
+40014070 STORE sb x0,3(x15)  val=0
+40014074 STORE sb x0,8(x15)  val=0
+40014078 STORE sw x29,0(x14)  val=?
+4001407c STORE sw x28,4(x14)  val=?
+40014080 STORE sw x6,8(x14)  val=?
+40014084 STORE sw x17,12(x14)  val=?
+40014088 STORE sw x16,16(x14)  val=?
+4001408c STORE c.sw x10,20(x14)  val=?
+4001408e STORE c.sw x11,24(x14)  val=?
+40014090 STORE c.sw x12,28(x14)  val=?
+40014092 c.bnez x13,0x40014036
+40014094 c.j 0x40013f86
+4001409a beq x13,x14,0x400140e8
+4001409e call 0x4001886a(?, ?, ?, ?, ?, ?, ?, ?)
+400140aa c.bnez x15,0x40014036
+400140ac c.j 0x40013f86
+400140b6 STORE sb x10,3(x15)  val=R67
+400140ba bge x13,x10,0x400140ca
+400140c0 STORE sb x13,8(x15)  val=1
+400140c4 STORE sb x13,10(x15)  val=1
+400140c8 c.j 0x40014034
+400140d4 STORE sb x12,10(x15)  val=?
+400140d8 STORE sb x11,8(x15)  val=0xffffffff
+400140dc bne x13,x10,0x40014034
+400140e2 STORE sb x13,9(x15)  val=1
+400140e6 c.j 0x40014034
+400140e8 call 0x40018846(R67, 0xffffffff, ?, 1, ?, ?, ?, ?)
+400140f4 c.j 0x40013fec
+400140fe call 0x400175c8(R68, ?, ?, ?, ?, ?, ?, ?)
+40014102 beq x10,x0,0x40014270
+40014106 c.bnez x8,0x4001418a
+40014144 STORE sw x5,0(x15)  val=?
+40014148 STORE sw x31,4(x15)  val=?
+4001414c STORE sw x30,8(x15)  val=?
+40014150 STORE sw x29,12(x15)  val=?
+40014154 STORE sw x28,16(x15)  val=?
+40014158 STORE sw x6,20(x15)  val=?
+4001415c STORE sw x17,24(x15)  val=?
+40014160 STORE sw x16,28(x15)  val=?
+40014164 STORE sh x10,32(x15)  val=?
+40014168 STORE sb x11,34(x15)  val=?
+40014174 STORE sb x13,10(x14)  val=?
+4001417c STORE sb x0,-1584(x12)  val=0
+40014180 STORE sb x0,-1808(x3)  val=0
+40014186 jal 0x4001380c
+40014198 STORE sb x13,-1584(x14)  val=?
+4001419c c.bnez x15,0x4001420a
+400141aa STORE sb x14,-1808(x3)  val=1
+400141ba beq x15,x0,0x400142f4
+400141c8 c.beqz x15,0x400141d0
+400141d2 bne x12,x14,0x400141be
+400141d6 beq x11,x0,0x400142f4
+400141de STORE sb x9,1(x13)  val=?
+400141e2 beq x15,x0,0x400142fc
+400141e6 beq x15,x9,0x40014368
+400141ea beq x16,x9,0x40014368
+400141ee call 0x4001886a(?, ?, ?, ?, 2, ?, ?, ?)
+400141fe beq x16,x15,0x40014384
+40014202 bne x15,x0,0x4001436e
+40014208 c.j 0x400142fe
+4001423a STORE sw x31,0(x15)  val=?
+4001423e STORE sw x30,4(x15)  val=?
+40014242 STORE sw x29,8(x15)  val=?
+40014246 STORE sw x28,12(x15)  val=?
+4001424a STORE sw x6,16(x15)  val=?
+4001424e STORE sw x17,20(x15)  val=?
+40014252 STORE sw x16,24(x15)  val=?
+40014256 STORE c.sw x10,28(x15)  val=?
+40014258 STORE c.sw x11,32(x15)  val=?
+4001425a STORE sb x12,36(x15)  val=?
+40014262 STORE sb x0,-1808(x3)  val=0
+40014266 STORE sb x0,-6(x3)  val=0
+4001426c jal 0x4001380c
+400142a8 STORE c.sw x11,0(x15)  val=?
+400142aa STORE c.sw x13,4(x15)  val=?
+400142ac STORE sw x5,8(x15)  val=?
+400142b0 STORE sw x31,12(x15)  val=?
+400142b4 STORE sw x30,16(x15)  val=?
+400142b8 STORE sw x29,20(x15)  val=?
+400142bc STORE sw x28,24(x15)  val=?
+400142c0 STORE sw x6,28(x15)  val=?
+400142c4 STORE sw x17,32(x15)  val=?
+400142c8 STORE sw x16,36(x15)  val=?
+400142cc STORE sh x10,40(x15)  val=?
+400142d0 STORE sb x0,3(x14)  val=0
+400142d4 STORE sb x0,8(x14)  val=0
+400142e2 STORE sb x0,10(x14)  val=0
+400142e6 STORE sb x11,-1808(x3)  val=1
+400142ea STORE sb x0,-1584(x13)  val=0
+400142f0 jal 0x4001380c
+400142fa c.bnez x15,0x4001436a
+400142fc c.beqz x9,0x40014384
+40014330 STORE sw x29,0(x15)  val=?
+40014334 STORE sw x28,4(x15)  val=?
+40014338 STORE sw x6,8(x15)  val=?
+4001433c STORE sw x17,12(x15)  val=?
+40014340 STORE sw x16,16(x15)  val=?
+40014344 STORE c.sw x10,20(x15)  val=?
+40014346 STORE sh x11,24(x15)  val=?
+4001434a STORE sb x12,26(x15)  val=?
+40014360 STORE c.sw x14,4(x13)  val=?
+40014364 jal 0x4001380c
+4001436a beq x15,x16,0x40014384
+40014370 STORE sb x12,10(x13)  val=1
+40014376 bgeu x16,x15,0x4001437c
+4001437c STORE sb x14,8(x13)  val=1
+40014382 c.j 0x400142fe
+40014384 call 0x40018846(?, ?, 1, 0x4ff18000, 1, ?, ?, ?)
+40014390 STORE sb x0,3(x13)  val=0
+40014394 STORE sb x0,10(x13)  val=0
+40014398 STORE sb x0,8(x13)  val=0
+4001439c c.j 0x400142fe
+4001439e jal 0x40018018
+400143aa c.beqz x15,0x400143c8
+400143c0 STORE sw x14,-1632(x12)  val=?
+400143c4 STORE sw x15,-1636(x13)  val=?
+400143c8 c.jr x1
+400143d8 c.bnez x15,0x400143e2
+400143e0 c.jr x1
+400143ec jalr x1,-822(x1)
+40014414 jalr x1,888(x1)
+40014420 jalr x1,1138(x1)
+40014436 c.beqz x14,0x40014486
+40014444 jalr x1,1104(x1)
+40014458 jalr x1,1104(x1)
+40014468 jalr x1,1056(x1)
+40014478 jalr x1,784(x1)
+4001448a c.beqz x15,0x400144ce
+400144a2 jalr x1,1010(x1)
+400144b0 jalr x1,996(x1)
+400144c0 jalr x1,712(x1)
+400144f4 jalr x1,662(x1)
+400144fa STORE sb x0,-1616(x8)  val=0
+40014508 c.jr x1
+40014512 bne x15,x0,0x4001463c
+40014522 c.bnez x15,0x400145da
+4001452c call 0x40047e50(?, 'ASCENSOR', 0x40084d30, ?, 'ASCENSOR', 0x4ff18000, ?, ?)
+40014532 bltu x15,x10,0x40014636
+40014566 beq x14,x12,0x40014574
+4001456a c.beqz x10,0x40014574
+40014570 beq x14,x16,0x4001463e
+40014576 bne x15,x11,0x40014562
+40014584 STORE sb x16,0(x17)  val=?
+40014588 call 0x40047e50(?, 0x4ff1635c, ?, ?, ?, 0x4ff18000, ?, ?)
+4001459e STORE sb x10,0(x15)  val=?
+400145a2 call 0x40013e70(?, ?, ?, ?, ?, ?, ?, ?)
+400145c2 STORE sw x16,0(x15)  val=?
+400145c6 STORE c.sw x10,4(x15)  val=?
+400145c8 STORE c.sw x11,8(x15)  val=?
+400145ca STORE c.sw x12,12(x15)  val=?
+400145cc STORE c.sw x13,16(x15)  val=?
+400145ce STORE sb x14,20(x15)  val=?
+400145d6 jal 0x4001380c
+40014608 STORE sw x30,0(x15)  val=?
+4001460c STORE sw x29,4(x15)  val=?
+40014610 STORE sw x28,8(x15)  val=?
+40014614 STORE sw x6,12(x15)  val=?
+40014618 STORE sw x17,16(x15)  val=?
+4001461c STORE sw x16,20(x15)  val=?
+40014620 STORE c.sw x10,24(x15)  val=?
+40014622 STORE c.sw x11,28(x15)  val=?
+40014624 STORE c.sw x12,32(x15)  val=?
+40014626 STORE c.sw x13,36(x15)  val=?
+40014628 STORE c.sw x14,40(x15)  val=?
+4001462a call 0x40013788(?, ?, ?, ?, ?, ?, ?, ?)
+40014632 jal 0x4001380c
+4001463a c.jr x1
+4001463c c.jr x1
+40014666 STORE sw x28,0(x15)  val=?
+4001466a STORE sw x6,4(x15)  val=?
+4001466e STORE sw x17,8(x15)  val=?
+40014672 STORE sw x16,12(x15)  val=?
+40014676 STORE c.sw x10,16(x15)  val=?
+40014678 STORE c.sw x11,20(x15)  val=?
+4001467a STORE c.sw x12,24(x15)  val=?
+4001467c STORE c.sw x13,28(x15)  val=?
+4001467e STORE sh x14,32(x15)  val=?
+40014682 c.j 0x4001462a
+40014692 beq x20,x0,0x400147f2
+400146a6 beq x15,x0,0x400148e2
+400146e6 beq x14,x10,0x400146fe
+400146ea bne x8,x15,0x400146e0
+400146f6 blt x14,x15,0x40014724
+400146fc c.j 0x400146d4
+400146fe call 0x400585c4(?, ?, ?, ?, ?, 2, ?, ?)
+4001470a bne x10,x15,0x400146ee
+40014720 bge x14,x15,0x400146fa
+40014732 bne x18,x14,0x400147dc
+4001473e call 0x4003fbd2(?, ?, ?, ?, ?, 0x4ff18000, ?, ?)
+40014744 bgeu x15,x10,0x400147fa
+4001474c beq x18,x14,0x400147fa
+40014750 STORE sw x18,-1816(x3)  val=?
+40014754 beq x18,x0,0x4001487c
+40014768 STORE sb x13,-1584(x14)  val=?
+4001476c c.bnez x15,0x40014808
+40014774 STORE sb x14,-1808(x3)  val=1
+40014782 beq x15,x0,0x400148e6
+40014790 c.beqz x15,0x40014798
+4001479a bne x13,x14,0x40014786
+4001479e beq x12,x0,0x400148e6
+400147a6 STORE sb x24,1(x21)  val=?
+400147aa beq x15,x0,0x400148f0
+400147ae beq x11,x24,0x400147c6
+400147b2 beq x15,x24,0x40014976
+400147b6 call 0x4001886a(R77, ?, ?, ?, 2, ?, ?, ?)
+400147c2 beq x15,x0,0x400148f0
+400147c6 beq x15,x24,0x40014976
+400147cc STORE sb x14,10(x21)  val=1
+400147d0 bgeu x24,x15,0x40014990
+400147d6 STORE sb x15,8(x21)  val=1
+400147da c.j 0x400148f8
+400147dc STORE sw x18,-1812(x3)  val=?
+400147e0 call 0x4003fbb8(R78, ?, ?, ?, 1, 1, ?, ?)
+400147ee STORE sw x10,-1588(x15)  val=R79
+400147f8 c.jr x1
+40014806 c.jr x1
+4001483c STORE sb x0,10(x21)  val=0
+40014840 STORE sw x5,0(x15)  val=?
+40014844 STORE sw x31,4(x15)  val=?
+40014848 STORE sw x30,8(x15)  val=?
+4001484c STORE sw x29,12(x15)  val=?
+40014850 STORE sw x28,16(x15)  val=?
+40014854 STORE sw x6,20(x15)  val=?
+40014858 STORE sw x17,24(x15)  val=?
+4001485c STORE sw x16,28(x15)  val=?
+40014860 STORE c.sw x10,32(x15)  val=?
+40014862 STORE c.sw x11,36(x15)  val=?
+40014864 STORE c.sw x12,40(x15)  val=?
+40014866 STORE c.sw x13,44(x15)  val=?
+40014868 STORE sb x0,-1808(x3)  val=0
+40014878 jal 0x4001380c
+400148b4 STORE sw x31,0(x15)  val=?
+400148b8 STORE sw x30,4(x15)  val=?
+400148bc STORE sw x29,8(x15)  val=?
+400148c0 STORE sw x28,12(x15)  val=?
+400148c4 STORE sw x6,16(x15)  val=?
+400148c8 STORE sw x17,20(x15)  val=?
+400148cc STORE sw x16,24(x15)  val=?
+400148d0 STORE c.sw x10,28(x15)  val=?
+400148d2 STORE c.sw x11,32(x15)  val=?
+400148d4 STORE sb x14,10(x21)  val=?
+400148d8 STORE sb x0,-1584(x12)  val=0
+400148dc STORE sb x0,-1808(x3)  val=0
+400148e0 c.j 0x4001486c
+400148e4 c.j 0x4001472e
+400148ec bne x15,x0,0x400147c6
+400148f0 STORE sb x0,10(x21)  val=0
+400148f4 beq x24,x0,0x4001497a
+40014944 STORE sw x14,4(x21)  val=?
+40014948 STORE sw x5,0(x15)  val=?
+4001494c STORE sw x31,4(x15)  val=?
+40014950 STORE sw x30,8(x15)  val=?
+40014954 STORE sw x29,12(x15)  val=?
+40014958 STORE sw x28,16(x15)  val=?
+4001495c STORE sw x6,20(x15)  val=?
+40014960 STORE sw x17,24(x15)  val=?
+40014964 STORE sw x16,28(x15)  val=?
+40014968 STORE c.sw x10,32(x15)  val=?
+4001496a STORE c.sw x11,36(x15)  val=?
+4001496c STORE sh x12,40(x15)  val=?
+40014970 STORE sb x13,42(x15)  val=?
+40014974 c.j 0x4001486c
+40014976 STORE sb x0,10(x21)  val=0
+4001497a call 0x40018846(?, ?, ?, ?, ?, ?, ?, ?)
+40014982 STORE sb x0,3(x21)  val=0
+40014986 STORE sb x0,10(x21)  val=0
+4001498a STORE sb x0,8(x21)  val=0
+4001498e c.j 0x400148f8
+40014992 STORE sb x15,8(x21)  val=0xffffffff
+40014996 c.j 0x400148f8
+400149ac call 0x40045b58(R80, ?, ?, ?, ?, 0xffffffff, ?, ?)
+400149b6 call set_pos(R81, ?, ?, ?, ?, ?, ?, ?)
+400149c0 call set_size(R81, ?, ?, ?, ?, ?, ?, ?)
+400149c8 call clear_flag(R81, 0x4000, ?, ?, ?, ?, ?, ?)
+400149d6 call bg_color(R81, 0x1106, 0, ?, ?, ?, ?, ?)
+400149e6 call bg_color(R81, 0x21a9, 32, ?, ?, ?, ?, ?)
+400149f4 call border_color(R81, 0x29a8, 0, ?, ?, ?, ?, ?)
+400149fe call border_w(R81, 1, 0, ?, ?, ?, ?, ?)
+40014a08 call radius(R81, 12, 0, ?, ?, ?, ?, ?)
+40014a12 call shadow_w(R81, 0, 0, ?, ?, ?, ?, ?)
+40014a20 call text_color(R81, 0xffffef9e, 0, ?, ?, ?, ?, ?)
+40014a30 call text_font(R81, F21, 0, ?, ?, ?, ?, ?)
+40014a3c call add_event_cb(R81, ?, 7, ?, ?, ?, ?, ?)
+40014a4e call add_event_cb(R81, 0x40013784, 1, 0, ?, ?, ?, ?)
+40014a54 call label_create(R81, ?, ?, ?, ?, ?, ?, ?)
+40014a5c call label_set_text(R95, ?, ?, ?, ?, ?, ?, ?)
+40014a68 call 0x40027fb0(?, 9, 0, 0, ?, ?, ?, ?)
+40014a74 c.jr x1
+40014a86 jalr x1,634(x1)
+40014a98 beq x10,x0,0x40014c9e
+40014abc call 0x4000d360(0, ?, 1, 0xffffffff, ?, ?, ?, ?)
+40014ac0 bne x10,x8,0x40014bdc
+40014ad0 bgeu x9,x14,0x40014bf0
+40014ad4 beq x15,x18,0x40014c14
+40014ad8 beq x15,x19,0x40014c3e
+40014adc beq x15,x20,0x40014c5c
+40014ae0 beq x15,x21,0x40014c7a
+40014ae8 bne x15,x14,0x40014ab2
+40014aee call 0x4001cd1e(0xffffffff, ?, ?, ?, 115, ?, ?, ?)
+40014af2 c.beqz x10,0x40014ab2
+40014af8 call 0x40018f00(R99, ?, ?, ?, ?, ?, ?, ?)
+40014b0a STORE c.sw x13,8(x15)  val=?
+40014b0c STORE c.sw x11,0(x15)  val=?
+40014b0e STORE c.sw x12,4(x15)  val=?
+40014b16 STORE sw x13,-4(x15)  val=?
+40014b1a bne x10,x14,0x40014b04
+40014b1e call 0x4001cd7e(?, ?, ?, ?, ?, 0x12c010, ?, ?)
+40014b4c bne x14,x23,0x40014b3e
+40014b5a call 0x40070cd0('*', 0, 0x1000193, ?, 0x12c001, 'ón', ?, ?)
+40014b6a call 0x4000d282(0, 'FRAME565', 8, ?, ?, ?, ?, ?)
+40014b74 call 0x4000d282(0, ?, 4, ?, ?, ?, ?, ?)
+40014b78 c.j 0x40014b8e
+40014b82 bne x15,x14,0x40014bb0
+40014b8a beq x24,x23,0x40014d12
+40014b94 call 0x4000d282(0, ?, 0x1000, ?, 75, 0x1000, ?, ?)
+40014ba6 call 0x4000d360(0, ?, 1, 0x1388, ?, ?, ?, ?)
+40014bac beq x10,x15,0x40014b7a
+40014bb4 call 0x4000d05a(0, 0xffffffff, ?, ?, ?, 1, ?, ?)
+40014bc2 call 0x40070cd0('*', 3, ?, ?, ?, 'ón', ?, ?)
+40014bd4 call 0x4000d360(0, ?, 1, 0xffffffff, ?, ?, ?, ?)
+40014bd8 beq x10,x8,0x40014ac4
+40014bee c.jr x1
+40014bf2 call 0x4001cd1e(0xffffffff, ?, ?, ?, ?, ?, ?, ?)
+40014bf6 beq x10,x0,0x40014ab2
+40014c0a call 0x40040a60(0x40015a7e, ?, ?, ?, ?, ?, ?, ?)
+40014c0e call 0x4001cd7e(R111, ?, ?, ?, ?, ?, ?, ?)
+40014c12 c.j 0x40014ab2
+40014c16 call 0x4001cd1e(0xffffffff, ?, ?, ?, ?, ?, ?, ?)
+40014c1a beq x10,x0,0x40014ab2
+40014c28 c.beqz x10,0x40014c9a
+40014c2a call 0x4002cd92(?, ?, ?, ?, ?, ?, ?, ?)
+40014c2e STORE sw x0,-1536(x23)  val=0
+40014c32 call 0x4001380c(R114, ?, ?, ?, ?, ?, ?, ?)
+40014c38 call 0x4001cd7e(R115, ?, ?, ?, ?, ?, ?, ?)
+40014c3c c.j 0x40014ab2
+40014c40 call 0x4001cd1e(0xffffffff, ?, ?, ?, ?, ?, ?, ?)
+40014c44 beq x10,x0,0x40014ab2
+40014c50 c.beqz x10,0x40014c38
+40014c56 call 0x40023b18(?, 7, 0, ?, ?, 0x4ff18000, ?, ?)
+40014c5a c.j 0x40014c38
+40014c5e call 0x4001cd1e(0xffffffff, ?, ?, ?, ?, ?, ?, ?)
+40014c62 beq x10,x0,0x40014ab2
+40014c74 call 0x40043336(0x40015adc, 0x578, 0, ?, ?, ?, ?, ?)
+40014c78 c.j 0x40014c38
+40014c7c call 0x4001cd1e(0xffffffff, ?, ?, ?, ?, ?, ?, ?)
+40014c80 beq x10,x0,0x40014ab2
+40014c8e c.bnez x15,0x40014c9a
+40014c98 c.beqz x15,0x40014cc6
+40014c9c c.j 0x40014c38
+40014cc2 jalr x1,-382(x1)
+40014cc6 call 0x400175c8('main.c', 0x37b, 'capture_task', 'frame', ?, ?, ?, ?)
+40014cca c.bnez x10,0x40014c9a
+40014cd2 STORE sb x15,0(x23)  val=3
+40014cd6 bgeu x15,x14,0x40014cde
+40014cda STORE sb x15,1(x23)  val=3
+40014ce4 bgeu x15,x14,0x40014cec
+40014ce8 STORE sb x15,2(x23)  val=3
+40014cf4 STORE sw x15,4(x23)  val=?
+40014cf8 call 0x400175d2(3, ?, ?, ?, ?, ?, ?, ?)
+40014cfc call 0x40013e70(R123, ?, ?, ?, ?, ?, ?, ?)
+40014d0a call 0x40040a60(0x40015aac, 0, ?, ?, ?, ?, ?, ?)
+40014d10 c.j 0x40014c38
+40014d1e call 0x4000d282(0, 'END565', 6, ?, ?, ?, ?, ?)
+40014d22 c.j 0x40014bb0
+40014d32 call 0x40026b8e(R126, ?, ?, ?, ?, ?, ?, ?)
+40014d3c call set_pos(R127, ?, ?, ?, ?, ?, ?, ?)
+40014d46 call set_size(R127, ?, ?, ?, ?, ?, ?, ?)
+40014d4e call 0x40026c56(R127, 16, ?, ?, ?, ?, ?, ?)
+40014d5c call bg_color(R127, 0x10c4, 0, ?, ?, ?, ?, ?)
+40014d68 call bg_opa(R127, 255, 0, ?, ?, ?, ?, ?)
+40014d76 call border_color(R127, 0x29a8, 0, ?, ?, ?, ?, ?)
+40014d80 call border_w(R127, 1, 0, ?, ?, ?, ?, ?)
+40014d8a call radius(R127, 16, 0, ?, ?, ?, ?, ?)
+40014d94 call pad_left(R127, 0, 0, ?, ?, ?, ?, ?)
+40014d9e call pad_right(R127, 0, 0, ?, ?, ?, ?, ?)
+40014da8 call pad_top(R127, 0, 0, ?, ?, ?, ?, ?)
+40014db2 call pad_bottom(R127, 0, 0, ?, ?, ?, ?, ?)
+40014dba call clear_flag(R127, 0x4000, ?, ?, ?, ?, ?, ?)
+40014dc6 c.jr x1
+40014e18 call make_panel(?, ?, 0x3b4, 8, 8, ?, ?, ?)
+40014e26 bne x8,x22,0x40014e2c
+40014e2c call bg_color(R141, ?, 0, ?, ?, ?, ?, ?)
+40014e36 call border_w(R141, 0, 0, ?, ?, ?, ?, ?)
+40014e40 bne x8,x15,0x40014e06
+40014e68 call make_label(?, 40, 0x3d2, 0x208, 22, '<  Desliza para cambiar de pantalla  >', F19, ?)
+40014e82 jal 0x4002cc9e
+40014e88 STORE sw x9,340(x2)  val=?
+40014e92 STORE sw x8,344(x2)  val=?
+40014e9a STORE sw x27,300(x2)  val=?
+40014ea6 STORE sw x20,328(x2)  val=?
+40014eb4 STORE sw x19,332(x2)  val=?
+40014eb8 STORE sw x1,348(x2)  val=?
+40014ebc STORE sw x18,336(x2)  val=?
+40014ec0 STORE sw x21,324(x2)  val=?
+40014ec4 STORE sw x22,320(x2)  val=?
+40014ec8 STORE sw x23,316(x2)  val=?
+40014ecc STORE sw x24,312(x2)  val=?
+40014ed0 STORE sw x25,308(x2)  val=?
+40014ed4 STORE sw x26,304(x2)  val=?
+40014ede bne x20,x0,0x40015a40
+40014ee6 STORE sw x0,-1560(x15)  val=0
+40014eee STORE sw x0,-1540(x15)  val=0
+40014ef6 STORE sw x0,-1576(x15)  val=0
+40014f08 STORE sw x0,-1612(x15)  val=0
+40014f30 STORE sw x0,-1608(x15)  val=0
+40014f34 STORE sw x19,12(x9)  val=R144
+40014f38 STORE sw x0,-1552(x26)  val=0
+40014f3c STORE sw x0,-1548(x25)  val=0
+40014f40 STORE sw x0,-1544(x24)  val=0
+40014f44 STORE sw x0,-1564(x18)  val=0
+40014f48 STORE sw x0,-1556(x23)  val=0
+40014f4c STORE sw x0,-1572(x22)  val=0
+40014f50 STORE sw x0,-1568(x21)  val=0
+40014f58 jalr x1,788(x1)
+40014f72 jalr x1,762(x1)
+40014f78 call 0x40026b8e(0, 0, 100, ?, ?, 0x4ff16360, ?, ?)
+40014f7e STORE sw x10,-1532(x8)  val=R145
+40014f82 call 0x40026c56(R145, 16, ?, ?, ?, ?, ?, ?)
+40014f90 call bg_opa(?, 255, 0, ?, ?, ?, ?, ?)
+40014fa4 call add_event_cb(?, 0x400135e6, 0, 0, ?, ?, ?, ?)
+40014fba call add_event_cb(?, 0x400143ca, 39, 0, ?, ?, ?, ?)
+40014fc2 beq x19,x0,0x4001578e
+40014fcc beq x19,x25,0x40015500
+40014fd0 call bg_color(?, 0, 0, ?, ?, ?, ?, ?)
+40014ffe call make_label(?, 44, 42, 0x1f4, 28, 'ASCENSOR / TÉCNICA', F21, 0x8ebeff)
+4001502e call make_label(?, 44, 110, 0x200, 48, 'Configura tu edificio', F38, 0xeef2f6)
+40015046 call make_panel(?, 44, 184, 0x200, 232, ?, ?, ?)
+4001506e call make_label(R153, 24, 20, 0x1b8, 30, 'Cantidad de pisos', F25, 0xeef2f6)
+4001509a call make_label(R153, 24, 64, 170, 56, 0x40080db0, F59, 0x8ebeff)
+4001509e STORE sw x10,-1568(x21)  val=R155
+400150c8 call make_button(R153, 0x110, 58, 90, 64, '-', 0x40015b40, 5)
+400150ec call make_button(R153, 0x182, 58, 90, 64, '+', 0x40015b40, 6)
+40015112 call make_label(R153, 24, 154, 220, 24, 'Origen de posición', F21, 0x91a0b2)
+4001513a call make_label(R153, 24, 182, 180, 32, 0x40080db0, F30, 0xeef2f6)
+40015142 STORE sw x10,-1572(x22)  val=R159
+40015162 call make_button(R153, 248, 150, 230, 60, 'MODO DEMO', 0x40015b40, 22)
+40015188 STORE sw x13,-1600(x14)  val=R160
+40015198 call make_label(?, 44, 0x1c5, 0x122, 36, 'Regla por piso', F30, 0xeef2f6)
+400151a0 call dropdown_create(?, ?, ?, ?, ?, ?, ?, ?)
+400151aa call clear_flag(R162, 0x4000, ?, ?, ?, ?, ?, ?)
+400151b8 call set_pos(R162, 0x15e, 0x1c0, ?, ?, ?, ?, ?)
+400151c6 call set_size(R162, 206, 52, ?, ?, ?, ?, ?)
+400151d2 call text_font(R162, F25, 0, ?, ?, ?, ?, ?)
+400151e6 jalr x1,134(x1)
+400151ee c.beqz x13,0x40015230
+4001520e c.j 0x4001521c
+40015222 call snprintf(?, ?, ?, 0x40080d5c, 1, '%sPiso %u', ?, ?)
+4001522c bgeu x13,x21,0x40015210
+40015234 bgeu x13,x15,0x4001523c
+40015238 STORE sb x13,-1819(x3)  val=?
+40015242 call dropdown_set_opts(?, ?, ?, ?, ?, ?, ?, ?)
+40015256 call 0x40047e06(?, ?, ?, ?, ?, ?, ?, ?)
+40015268 call add_event_cb(?, 0x40013e32, 28, 0, ?, ?, ?, ?)
+40015280 call make_panel(?, 44, 0x20e, 0x200, 180, ?, ?, ?)
+4001528e call border_color(R171, 0xffff8dff, 0, ?, ?, ?, ?, ?)
+400152b2 call make_label(R171, 24, 12, 0x1c2, 27, 'SI entrada digital', F25, 0x8ebeff)
+400152b8 call dropdown_create(R171, ?, ?, ?, ?, ?, ?, ?)
+400152c2 STORE sw x10,-1592(x18)  val=R174
+400152c6 call clear_flag(R174, 0x4000, ?, ?, ?, ?, ?, ?)
+400152d4 call set_pos(?, 24, 53, ?, ?, ?, ?, ?)
+400152e4 call set_size(?, 250, 52, ?, ?, ?, ?, ?)
+400152f2 call text_font(?, F25, 0, ?, ?, ?, ?, ?)
+40015302 call dropdown_set_opts(?, 0x40085034, ?, ?, ?, ?, ?, ?)
+40015308 call dropdown_create(R171, ?, ?, ?, ?, ?, ?, ?)
+4001530e STORE sw x10,-1596(x9)  val=R180
+40015312 call clear_flag(R180, 0x4000, ?, ?, ?, ?, ?, ?)
+40015322 call set_pos(?, 0x12c, 53, ?, ?, ?, ?, ?)
+40015332 call set_size(?, 185, 52, ?, ?, ?, ?, ?)
+40015340 call text_font(?, F25, 0, ?, ?, ?, ?, ?)
+40015350 call dropdown_set_opts(?, 0x40085094, ?, ?, ?, ?, ?, ?)
+40015354 call 0x40013788(R185, ?, ?, ?, ?, ?, ?, ?)
+40015368 call add_event_cb(?, 0x4001450a, 28, 0, ?, ?, ?, ?)
+40015378 call add_event_cb(?, 0x4001450a, 28, 0, ?, ?, ?, ?)
+4001539c call make_label(R171, 24, 126, 0x1cc, 32, 0x40080db0, F25, 0xeef2f6)
+400153a4 STORE sw x10,-1608(x15)  val=R189
+400153bc call make_panel(?, 44, 0x2d5, 0x200, 83, 0x4ff18000, ?, ?)
+400153ca call border_color(R190, 0x76b4, 0, ?, ?, ?, ?, ?)
+400153ec call make_label(R190, 24, 26, 0x1d1, 32, 0x40080db0, F25, 0x76d6a2)
+400153f4 STORE sw x10,-1612(x15)  val=R192
+40015420 call make_label(?, 40, 0x337, 0x208, 45, 0x40080db0, F19, 0x91a0b2)
+4001542a call text_align(R193, 2, 0, ?, ?, ?, ?, ?)
+40015438 STORE sw x9,-1576(x15)  val=R193
+4001545a call make_button(?, 44, 0x36e, 0x200, 57, 'EDITAR BLOQUES Y NOTAS', ?, 30)
+4001546e STORE sw x15,-1540(x14)  val=R195
+40015472 call 0x40014dc8(2, 0x8ebeff, ?, ?, 0x4ff18000, R195, ?, ?)
+40015476 call 0x4001380c(R196, ?, ?, ?, ?, ?, ?, ?)
+4001547e bne x20,x0,0x40015744
+40015482 beq x27,x0,0x40015788
+4001548e beq x15,x0,0x40015788
+40015496 call 0x4002356c(?, 0, 180, 0, 1, ?, ?, ?)
+4001549e jalr x1,1012(x1)
+400154fc jalr x0,654(x6)
+40015500 call bg_color(3, 'ASCENSOR', 0x400850b4, R198, 'ASCENSOR', R144, 0x258, 0x400)
+4001552e call make_label(?, 44, 42, 0x1e0, 28, 'ASCENSOR / INTERIOR', F21, 0x97aba0)
+4001555c call make_label(?, 40, 111, 0x208, 30, 'ESTÁS AQUÍ', F25, 0x97aba0)
+40015564 call text_align(R201, 2, 0, ?, ?, ?, ?, ?)
+40015594 call make_label(?, 100, 165, 0x190, 144, 0x40080db0, F66digits, 0xcaedb0)
+4001559c STORE sw x10,-1556(x23)  val=R203
+400155a0 call text_align(R203, 2, 0, ?, ?, ?, ?, ?)
+400155c8 call make_label(?, 40, 0x145, 0x208, 32, 0x40080db0, F21, 0xcaedb0)
+400155d2 call text_align(R205, 2, 0, ?, ?, ?, ?, ?)
+40015602 STORE sw x21,-1564(x18)  val=R205
+40015606 call make_label(?, 40, 0x18a, 0x208, 36, '¿A qué piso quieres ir?', F30, 0xeef2f6)
+4001560e call text_align(R207, 2, 0, ?, ?, ?, ?, ?)
+40015626 call make_panel(?, 44, 0x1c6, 0x200, 0x1a0, ?, ?, ?)
+40015632 call bg_opa(R209, 0, 0, ?, ?, ?, ?, ?)
+4001563c call border_w(R209, 0, 0, ?, ?, ?, ?, ?)
+40015644 call clear_flag(R209, 16, ?, ?, ?, ?, ?, ?)
+4001564c call 0x40029d2a(R209, 12, ?, ?, ?, ?, ?, ?)
+40015654 c.beqz x15,0x400156f4
+4001568e call snprintf(?, 12, ?, ?, '%d', ?, ?, ?)
+400156cc call make_button(?, ?, ?, 160, 90, ?, ?, ?)
+400156d0 STORE sw x10,-4(x22)  val=R215
+400156da call text_font(R215, F38, 0, ?, ?, ?, ?, ?)
+400156e8 call radius(?, 45, 0, ?, ?, ?, ?, ?)
+400156f0 bge x15,x26,0x40015686
+4001571e call make_label(?, 40, 0x37f, 0x208, 24, 'Tu piso se ilumina al llegar.', F19, 0x97aba0)
+40015726 call text_align(R218, 2, 0, ?, ?, ?, ?, ?)
+40015734 call 0x40014dc8(1, 0xcaedb0, ?, ?, ?, ?, ?, ?)
+40015738 call 0x4001380c(R220, ?, ?, ?, ?, ?, ?, ?)
+40015740 beq x20,x0,0x40015482
+40015768 call 0x400195e6(?, ?, ?, ?, ?, ?, ?, ?)
+40015772 bne x15,x0,0x40015a72
+40015786 c.j 0x40015492
+4001578c c.j 0x40015492
+40015792 call bg_color(?, 0, 0, ?, ?, R222, ?, ?)
+400157c0 call make_label(?, 44, 42, 0x168, 25, 'ASCENSOR / EXTERIOR', F21, 0xa7b3ac)
+400157f0 call make_label(?, 40, 120, 0x208, 32, 'ESTÁS EN EL PISO', F25, 0xa7b3ac)
+400157f8 call text_align(R225, 2, 0, ?, ?, ?, ?, ?)
+40015828 call make_label(?, 100, 182, 0x190, 144, 0x40080db0, F66digits, 0xf2f5f0)
+40015830 STORE sw x10,-1544(x24)  val=R227
+40015834 call text_align(R227, 2, 0, ?, ?, ?, ?, ?)
+4001585e call make_button(?, 90, 0x166, 190, 66, 'Piso anterior', 0x40015b40, 1)
+40015884 call make_button(?, 0x140, 0x166, 190, 66, 'Piso siguiente', 0x40015b40, 2)
+4001589c call make_panel(?, 44, 0x1d6, 0x200, 170, ?, ?, ?)
+400158aa call bg_color(R231, 0x10a2, 0, ?, ?, ?, ?, ?)
+400158d2 call make_label(R231, 24, 20, 0x14a, 26, 'EL ASCENSOR ESTÁ EN', F21, 0xa7b3ac)
+400158fa call make_label(R231, 24, 62, 180, 60, 0x40080db0, F59, 0xf2f5f0)
+40015902 STORE sw x10,-1556(x23)  val=R234
+40015924 call make_label(R231, 0x15e, 46, 100, 65, 0x40080db0, F59, 0xf2f5f0)
+40015930 STORE sw x10,-1548(x25)  val=R235
+40015950 call make_label(R231, 225, 122, 0x109, 28, 0x40080db0, F19, 0xf2f5f0)
+40015954 STORE sw x10,-1564(x18)  val=R236
+40015984 call make_label(?, 40, 0x2ad, 0x208, 34, '¿Hacia dónde vas?', F30, 0xf2f5f0)
+4001598c call text_align(R237, 2, 0, ?, ?, ?, ?, ?)
+400159b2 call make_button(?, 44, 0x2ea, 246, 112, 0x40084f2c, 0x40015b40, 3)
+400159da call make_button(?, 0x136, 0x2ea, 246, 112, 0x40084f38, 0x40015b40, 4)
+400159ea call bg_color(R239, 0x234a, 0, ?, ?, ?, ?, ?)
+400159f6 call bg_color(R240, 0x234a, 0, ?, ?, ?, ?, ?)
+40015a1e call make_label(?, 40, 0x374, 0x208, 48, 0x40080db0, F19, 0xa7b3ac)
+40015a28 call text_align(R243, 2, 0, ?, ?, ?, ?, ?)
+40015a36 STORE sw x9,-1552(x26)  val=R243
+40015a3a call 0x40014dc8(0, 0x206a50, ?, ?, ?, ?, ?, ?)
+40015a3e c.j 0x40015476
+40015a44 STORE sw x0,-1636(x15)  val=0
+40015a4c STORE sw x0,-1632(x15)  val=0
+40015a54 jalr x1,1634(x1)
+40015a66 STORE c.sw x10,0(x15)  val=R245
+40015a68 STORE c.sw x11,4(x15)  val=?
+40015a6a STORE sb x13,-1616(x14)  val=1
+40015a6e jal 0x40014ee2
+40015a72 call 0x4002390a(R245, ?, ?, 1, 0x4ff18000, 0x4ff179a8, ?, ?)
+40015a78 call 0x4002cd92(?, ?, ?, ?, ?, ?, ?, ?)
+40015a7c c.j 0x4001549a
+40015a86 c.beqz x15,0x40015a8a
+40015a88 c.jr x1
+40015a92 call 0x400195cc(R247, ?, ?, ?, ?, ?, ?, ?)
+40015a96 c.bnez x10,0x40015aa4
+40015aa0 jal 0x40014e86
+40015aaa c.jr x1
+40015ab4 c.beqz x15,0x40015ab8
+40015ab6 c.jr x1
+40015ac2 call 0x400195cc(R247, ?, ?, ?, ?, ?, ?, ?)
+40015ac6 c.bnez x10,0x40015ad4
+40015ad0 jal 0x40014e86
+40015ada c.jr x1
+40015ae8 STORE sw x15,-1640(x14)  val=?
+40015aec blt x13,x15,0x40015afc
+40015af8 c.beqz x15,0x40015b04
+40015afa c.jr x1
+40015afc STORE sw x0,-1640(x14)  val=0
+40015b00 jal 0x4004338e
+40015b0e call 0x400195cc(?, ?, ?, 6, 0x4ff18000, ?, ?, ?)
+40015b12 c.bnez x10,0x40015b38
+40015b34 jal 0x40014e86
+40015b3e c.jr x1
+40015b48 call 0x400195cc(?, ?, ?, ?, ?, ?, ?, ?)
+40015b4c c.beqz x10,0x40015b56
+40015b54 c.jr x1
+40015b58 call 0x40023b64(?, ?, ?, ?, ?, ?, ?, ?)
+40015b5e bne x10,x15,0x40015b4e
+40015b6a c.bnez x15,0x40015b4e
+40015b6e call 0x40023b70(?, ?, ?, ?, ?, ?, ?, ?)
+40015b78 jalr x1,-742(x1)
+40015b98 jalr x1,-1038(x1)
+40015ba0 beq x15,x14,0x40015c2c
+40015ba6 beq x15,x14,0x40015c62
+40015bac beq x15,x14,0x40015c7a
+40015bb2 beq x15,x14,0x40015c10
+40015bb8 beq x15,x13,0x40015c4a
+40015bc0 bltu x14,x13,0x40015c92
+40015bce beq x15,x14,0x40015db2
+40015bea call snprintf(?, 72, 'Llamada desde P%02u · pasajero quiere %s.', ?, 'bajar', ?, ?, ?)
+40015c00 call snprintf(?, 72, '%s', ?, ?, ?, ?, ?)
+40015c0a call 0x40013c5c(?, ?, ?, ?, ?, ?, ?, ?)
+40015c0e c.j 0x40015b4e
+40015c18 bgeu x15,x13,0x40015b4e
+40015c1e STORE sb x13,2(x14)  val=?
+40015c28 jal 0x4001380c
+40015c34 bne x15,x0,0x40015b4e
+40015c38 call 0x400195cc(R256, ?, ?, ?, ?, ?, ?, ?)
+40015c3c bne x10,x0,0x40015b4e
+40015c46 jal 0x40014e86
+40015c56 bgeu x14,x13,0x40015b4e
+40015c5c STORE sb x14,2(x15)  val=?
+40015c60 c.j 0x40015c22
+40015c6a bne x15,x0,0x40015b4e
+40015c6e call 0x400195cc(R257, ?, ?, ?, ?, ?, ?, ?)
+40015c72 bne x10,x0,0x40015b4e
+40015c78 c.j 0x40015c40
+40015c82 bne x15,x0,0x40015b4e
+40015c86 call 0x400195cc(1, ?, ?, ?, ?, ?, ?, ?)
+40015c8a bne x10,x0,0x40015b4e
+40015c90 c.j 0x40015c40
+40015c94 beq x15,x14,0x40015cec
+40015c9a bne x15,x14,0x40015dbc
+40015ca8 bltu x14,x13,0x40015b4e
+40015cb0 c.bnez x14,0x40015d50
+40015cba c.bnez x14,0x40015d50
+40015cbc call 0x400175c8(2, ?, ?, ?, ?, ?, ?, ?)
+40015cc0 c.bnez x10,0x40015d50
+40015ccc STORE sb x10,-16(x3)  val=?
+40015cd0 call 0x400175d2(?, ?, ?, ?, ?, ?, ?, ?)
+40015cd4 call 0x40013e70(R261, ?, ?, ?, ?, ?, ?, ?)
+40015ce8 jal 0x40040a60
+40015cf6 bgeu x15,x14,0x40015b4e
+40015cfe c.bnez x15,0x40015d50
+40015d08 c.bnez x15,0x40015d50
+40015d0c call 0x400175c8(0x40015aac, 0, ?, ?, ?, ?, ?, ?)
+40015d10 c.bnez x10,0x40015d50
+40015d22 STORE sb x10,0(x16)  val=?
+40015d26 bgeu x10,x15,0x40015d2e
+40015d2a STORE sb x10,1(x16)  val=?
+40015d32 bgeu x10,x15,0x40015d3a
+40015d36 STORE sb x10,2(x16)  val=?
+40015d4a STORE sw x15,4(x16)  val=?
+40015d4e c.j 0x40015cd0
+40015d86 STORE sw x31,0(x15)  val=?
+40015d8a STORE sw x30,4(x15)  val=?
+40015d8e STORE sw x29,8(x15)  val=?
+40015d92 STORE sw x28,12(x15)  val=?
+40015d96 STORE sw x6,16(x15)  val=?
+40015d9a STORE sw x17,20(x15)  val=?
+40015d9e STORE sw x16,24(x15)  val=?
+40015da2 STORE c.sw x10,28(x15)  val=?
+40015da4 STORE c.sw x11,32(x15)  val=?
+40015da6 STORE c.sw x12,36(x15)  val=?
+40015da8 STORE sh x13,40(x15)  val=?
+40015dac STORE sb x14,42(x15)  val=?
+40015db0 c.j 0x40015c22
+40015dba c.j 0x40015bda
+40015dc0 beq x15,x14,0x40015ee4
+40015dc6 bne x15,x14,0x40016202
+40015dd2 bne x15,x0,0x40016106
+40015dde call 0x40026b8e(?, ?, ?, ?, 30, 0x4ff18000, ?, ?)
+40015dec STORE sw x10,-1536(x15)  val=R264
+40015df0 call set_pos(R264, 0, 0, ?, ?, 0x4ff18000, ?, ?)
+40015e00 call set_size(?, 0x258, 0x400, ?, ?, ?, ?, ?)
+40015e0a call 0x40026c56(?, 16, ?, ?, ?, ?, ?, ?)
+40015e16 call bg_color(?, 0, 0, ?, ?, ?, ?, ?)
+40015e24 call pad_left(?, 0, 0, ?, ?, ?, ?, ?)
+40015e2e call pad_right(?, 0, 0, ?, ?, ?, ?, ?)
+40015e38 call pad_top(?, 0, 0, ?, ?, ?, ?, ?)
+40015e42 call pad_bottom(?, 0, 0, ?, ?, ?, ?, ?)
+40015e4e call border_w(?, 0, 0, ?, ?, ?, ?, ?)
+40015e56 call 0x40026b8e(?, ?, ?, ?, ?, ?, ?, ?)
+40015e62 call set_pos(R274, 0, 80, ?, ?, ?, ?, ?)
+40015e70 call set_size(R274, 0x258, 0x3b0, ?, ?, ?, ?, ?)
+40015e7a call pad_left(R274, 0, 0, ?, ?, ?, ?, ?)
+40015e84 call pad_right(R274, 0, 0, ?, ?, ?, ?, ?)
+40015e8e call pad_top(R274, 0, 0, ?, ?, ?, ?, ?)
+40015e98 call pad_bottom(R274, 0, 0, ?, ?, ?, ?, ?)
+40015ea2 call border_w(R274, 0, 0, ?, ?, ?, ?, ?)
+40015eb0 call 0x400182da(R274, F25, ?, ?, ?, ?, ?, ?)
+40015ee0 jal 0x40014998
+40015eec c.beqz x15,0x40015f68
+40015f1a STORE sb x0,-1583(x14)  val=0
+40015f2c STORE sw x5,0(x15)  val=?
+40015f30 STORE sw x31,4(x15)  val=?
+40015f34 STORE sw x30,8(x15)  val=?
+40015f38 STORE sw x29,12(x15)  val=?
+40015f3c STORE sw x28,16(x15)  val=?
+40015f40 STORE sw x6,20(x15)  val=?
+40015f44 STORE sw x17,24(x15)  val=?
+40015f48 STORE sw x16,28(x15)  val=?
+40015f4c STORE sb x10,32(x15)  val=?
+40015f50 STORE sb x0,3(x14)  val=0
+40015f54 STORE sb x0,8(x14)  val=0
+40015f5a STORE sb x0,10(x14)  val=0
+40015f5e STORE sb x11,-1808(x3)  val=1
+40015f62 STORE sb x0,-1584(x13)  val=0
+40015f66 c.j 0x40015c22
+40015f68 call 0x400175c8(?, 1, 12, 0x4ff18000, ?, ?, ?, ?)
+40015f6c bne x10,x0,0x400160ca
+40015f78 beq x15,x0,0x400161ae
+40015fb0 beq x13,x14,0x40016054
+40015fb4 bne x12,x15,0x40015faa
+40015fc4 bge x14,x15,0x40015fa2
+40015fcc beq x6,x0,0x400161ae
+40015fd2 STORE sw x15,-1816(x3)  val=0xffffffff
+40015fd6 STORE sw x15,-1812(x3)  val=0xffffffff
+40015fdc call 0x4003fbb8(R283, 0x4ff16329, 0x40091474, ?, ?, 0xffffffff, ?, 0x4ff16346)
+40016012 STORE sb x28,-1583(x15)  val=1
+4001601e STORE sb x0,3(x16)  val=0
+40016022 STORE sw x7,0(x15)  val=?
+40016026 STORE sw x5,4(x15)  val=?
+4001602a STORE sw x31,8(x15)  val=?
+4001602e STORE sw x30,12(x15)  val=?
+40016032 STORE sw x29,16(x15)  val=?
+40016036 STORE sw x6,20(x15)  val=?
+4001603a STORE sw x17,24(x15)  val=?
+4001603e STORE c.sw x11,28(x15)  val=?
+40016040 STORE c.sw x12,32(x15)  val=?
+40016042 STORE c.sw x13,36(x15)  val=?
+40016046 STORE sb x0,10(x16)  val=0
+4001604a STORE sw x10,-1588(x28)  val=R284
+4001604e STORE sb x0,-1808(x3)  val=0
+40016052 c.j 0x40015c22
+4001605e blt x15,x0,0x400160c2
+40016094 call 0x400586b6(?, ?, ?, 0, ?, ?, ?, ?)
+400160b6 c.bnez x10,0x40016162
+400160c0 c.j 0x40015fb8
+400160c8 c.j 0x40016068
+400160e4 STORE sw x16,0(x14)  val=?
+400160e8 STORE c.sw x10,4(x14)  val=?
+400160ea STORE c.sw x11,8(x14)  val=?
+400160ec STORE c.sw x12,12(x14)  val=?
+400160f2 bne x15,x13,0x400160da
+400160fc STORE c.sw x13,0(x14)  val=?
+400160fe STORE sh x15,4(x14)  val=?
+40016104 c.j 0x40015c22
+40016138 STORE sw x30,0(x15)  val=?
+4001613c STORE sw x29,4(x15)  val=?
+40016140 STORE sw x28,8(x15)  val=?
+40016144 STORE sw x6,12(x15)  val=?
+40016148 STORE sw x17,16(x15)  val=?
+4001614c STORE sw x16,20(x15)  val=?
+40016150 STORE c.sw x10,24(x15)  val=?
+40016152 STORE c.sw x11,28(x15)  val=?
+40016154 STORE c.sw x12,32(x15)  val=?
+40016156 STORE sh x13,36(x15)  val=?
+4001615a STORE sb x14,38(x15)  val=?
+40016160 c.j 0x40015c22
+4001618c STORE sw x28,0(x15)  val=?
+40016190 STORE sw x6,4(x15)  val=?
+40016194 STORE sw x17,8(x15)  val=?
+40016198 STORE sw x16,12(x15)  val=?
+4001619c STORE c.sw x10,16(x15)  val=?
+4001619e STORE c.sw x11,20(x15)  val=?
+400161a0 STORE c.sw x12,24(x15)  val=?
+400161a2 STORE sh x13,28(x15)  val=?
+400161a6 STORE sb x14,30(x15)  val=?
+400161ac c.j 0x40015c22
+400161dc STORE sw x29,0(x15)  val=?
+400161e0 STORE sw x28,4(x15)  val=?
+400161e4 STORE sw x6,8(x15)  val=?
+400161e8 STORE sw x17,12(x15)  val=?
+400161ec STORE sw x16,16(x15)  val=?
+400161f0 STORE c.sw x10,20(x15)  val=?
+400161f2 STORE c.sw x11,24(x15)  val=?
+400161f4 STORE c.sw x12,28(x15)  val=?
+400161f6 STORE sh x13,32(x15)  val=?
+400161fa STORE sb x14,34(x15)  val=?
+40016200 c.j 0x40015c22
+40016208 bltu x13,x14,0x40016220
+4001621c jal 0x40013c5c
+40016222 c.j 0x40015b4e
+4001624e STORE sw x15,0(x18)  val=0x1010101
+40016252 STORE sw x15,4(x18)  val=0x1010101
+40016256 STORE sw x15,8(x18)  val=0x1010101
+4001625a STORE sw x15,12(x18)  val=0x1010101
+4001625e STORE sw x15,16(x18)  val=0x1010101
+40016262 STORE sw x15,20(x18)  val=0x1010101
+40016266 STORE sw x14,0(x19)  val=0xffffffff
+4001626a STORE sw x14,4(x19)  val=0xffffffff
+4001626e STORE sw x14,8(x19)  val=0xffffffff
+40016272 STORE sw x14,12(x19)  val=0xffffffff
+40016276 STORE sw x14,16(x19)  val=0xffffffff
+4001627a STORE sw x14,20(x19)  val=0xffffffff
+4001627e STORE sb x14,24(x19)  val=0xffffffff
+40016282 STORE sb x13,24(x18)  val=1
+40016286 call 0x4000f72e(?, ?, ?, 1, 0xffffffff, 0x1010101, ?, ?)
+40016292 c.beqz x15,0x40016312
+4001629c c.beqz x15,0x40016312
+4001629e bne x10,x0,0x4001683c
+400162ae call 0x4000f782('elevator', 0, ?, ?, ?, ?, ?, ?)
+400162b2 beq x10,x0,0x40016706
+400162d0 call 0x4000f782('elevator', 1, ?, ?, ?, 0x40091000, ?, ?)
+400162d4 beq x10,x0,0x40016698
+400162e4 beq x13,x12,0x40016320
+400162ea bne x9,x15,0x400162e0
+4001630e jalr x1,-1994(x1)
+40016312 call 0x4000f762('main.c', 0x3c2, 'app_main', 'allowed_input(2) && allowed_input(52) && !allowed_input(31) && !allowed_input(40)', 0x40091469, 0x4009146a, ?, ?)
+40016316 bne x10,x0,0x40016990
+4001631a call 0x4000f72e(R289, ?, ?, ?, ?, ?, ?, ?)
+4001631e c.j 0x4001629e
+40016328 beq x13,x12,0x400162ee
+4001632e bne x9,x15,0x40016324
+4001633a beq x15,x13,0x400162ee
+40016340 bne x9,x14,0x40016336
+40016356 call 0x40017e1c(?, 0x400140f6, 0, 40, ?, ?, ?, ?)
+4001635c bne x10,x0,0x4001676c
+40016380 STORE sb x12,-1820(x3)  val=?
+40016386 call 0x40004b8a(?, 0x4ff17a0c, ?, ?, 3, 0x9c4, 0, 0)
+4001638a bne x10,x0,0x40016880
+400163ac call 0x40004b8a(?, 0x4ff17a08, 0, 0, 4, 0xce4, ?, ?)
+400163b0 bne x10,x0,0x400168a4
+400163b4 call 0x4001c186(R293, ?, ?, ?, ?, ?, ?, ?)
+400163b8 bne x10,x0,0x400168d6
+400163bc call 0x4001b152(R294, ?, ?, ?, ?, ?, ?, ?)
+400163c0 bne x10,x0,0x40016924
+400163c4 call 0x40018fec(R295, ?, ?, ?, ?, ?, ?, ?)
+400163c8 bne x10,x0,0x40016948
+400163d0 call 0x40018fb0(70, ?, ?, ?, ?, ?, ?, ?)
+400163d4 bne x10,x0,0x4001696c
+400163d8 call 0x4001864e(R297, ?, ?, ?, ?, ?, ?, ?)
+400163de bne x10,x0,0x4001680a
+400163e4 call 0x4001cd1e(0xffffffff, ?, ?, ?, ?, ?, ?, ?)
+400163e8 beq x10,x0,0x400167d4
+40016432 STORE sw x17,0(x14)  val=?
+40016436 STORE sw x16,4(x14)  val=?
+40016442 STORE c.sw x13,8(x14)  val=?
+40016448 STORE c.sw x11,16(x14)  val=?
+4001644a STORE c.sw x10,24(x14)  val=?
+40016466 STORE sw x5,12(x14)  val=?
+4001646a STORE c.sw x13,20(x14)  val=M14
+40016478 STORE sw x16,0(x15)  val=?
+4001647c STORE sw x31,0(x9)  val=?
+40016480 STORE sw x30,4(x9)  val=?
+40016484 STORE sw x29,8(x9)  val=?
+40016488 STORE sw x28,12(x9)  val=?
+4001648c STORE sw x6,16(x9)  val=?
+40016490 STORE sw x17,24(x9)  val=?
+40016494 STORE c.sw x11,20(x9)  val=0x400d7d50
+400164a2 STORE c.sw x10,4(x15)  val=?
+400164c2 STORE c.sw x14,20(x15)  val=0x400dbb6c
+400164d8 STORE sw x28,8(x15)  val=?
+400164dc STORE sw x6,12(x15)  val=?
+400164e8 STORE sw x17,16(x15)  val=?
+400164ec STORE sw x16,24(x15)  val=?
+400164f8 STORE c.sw x10,0(x14)  val=?
+400164fc STORE c.sw x11,4(x14)  val=?
+400164fe STORE c.sw x12,12(x14)  val=?
+40016520 STORE sw x5,8(x14)  val=?
+40016524 STORE sw x31,16(x14)  val=?
+40016528 STORE sw x30,24(x14)  val=?
+4001652c STORE sw x29,0(x15)  val=?
+40016530 STORE sw x28,4(x15)  val=?
+40016534 STORE sw x6,8(x15)  val=?
+40016538 STORE c.sw x11,20(x14)  val=0x400e1090
+4001653a STORE sw x16,16(x15)  val=?
+4001653e STORE c.sw x10,24(x15)  val=?
+40016540 STORE c.sw x12,20(x15)  val=0x400e80a4
+40016542 STORE sw x17,12(x15)  val=?
+40016566 STORE sw x17,0(x15)  val=?
+4001656a STORE sw x16,4(x15)  val=?
+4001656e STORE c.sw x11,12(x15)  val=?
+40016570 STORE c.sw x12,16(x15)  val=?
+40016572 STORE c.sw x13,24(x15)  val=?
+40016574 STORE c.sw x14,20(x15)  val=0x400f33f4
+40016576 STORE c.sw x10,8(x15)  val=?
+40016578 call 0x4003f966(?, ?, ?, ?, 0x400f33f4, F59, ?, ?)
+40016586 STORE c.sw x15,36(x14)  val=0x400143a2
+40016588 call 0x4003f966(R300, ?, ?, ?, ?, 0x400143a2, ?, ?)
+4001658e call 0x4003f966(R301, ?, ?, ?, ?, ?, ?, ?)
+400165a2 call 0x400389c0(R302, 0x76b4, 0xffff8dff, 1, F21, ?, ?, ?)
+400165aa call 0x400234fe(R301, R303, ?, ?, ?, ?, ?, ?)
+400165ae call 0x4003f966(R304, ?, ?, ?, ?, ?, ?, ?)
+400165b4 call 0x4003fa0e(R305, 1, ?, ?, ?, ?, ?, ?)
+400165ba call 0x4003f970(0, ?, ?, ?, ?, ?, ?, ?)
+400165c2 bne x10,x15,0x40016900
+400165c8 call 0x4003f994(0, ?, ?, ?, ?, 0x258, ?, ?)
+400165d0 bne x10,x15,0x40016900
+400165dc beq x15,x0,0x400168c8
+400165ec call 0x40043336(0x40014684, 10, 0, ?, ?, ?, ?, ?)
+400165fc call 0x40043336(0x4001439e, 10, 0, ?, ?, ?, ?, ?)
+4001660e call 0x40043336(0x40013f24, 0x384, 0, ?, ?, ?, ?, ?)
+40016612 beq x10,x0,0x400169b4
+40016616 call 0x4001cd7e(R311, ?, ?, ?, ?, ?, ?, ?)
+40016628 call 0x4000d9c0(0, 0x400, 0, 0, 0, 0, ?, ?)
+4001662c bne x10,x0,0x400169d8
+40016634 call 0x4000c65e(R313, 0xe1000, ?, ?, ?, ?, ?, ?)
+40016638 bne x10,x0,0x400169fc
+4001665a call 0x40070220(0x40014a76, 'capture', 0x1000, 0, 4, 0, 0x7fffffff, ?)
+40016662 jalr x1,560(x1)
+40016684 jalr x1,262(x1)
+40016696 c.jr x1
+400166a4 STORE sb x0,68(x2)  val=0
+400166a8 call 0x4000f938(?, 'base3', ?, R315, 'ASCENSOR', ?, ?, ?)
+400166ac c.bnez x10,0x400166b4
+400166b2 c.bnez x15,0x400166fe
+400166c0 STORE sb x12,-16(x3)  val=3
+400166c4 call 0x4000f826(?, 'floors', 3, ?, ?, ?, ?, ?)
+400166ca beq x10,x0,0x40016860
+400166d2 jalr x1,448(x1)
+400166da call 0x4005b9e0(R317, ?, ?, ?, ?, ?, ?, ?)
+400166fa jalr x1,144(x1)
+40016700 call 0x4000f7c0(?, 'ASCENSOR', 0x400852a0, R317, 'ASCENSOR', R318, ?, ?)
+40016704 c.j 0x400162d8
+40016718 STORE sb x15,27(x2)  val=?
+4001671c call 0x4000f938(?, 'floors', ?, ?, ?, ?, ?, ?)
+40016720 c.bnez x10,0x40016734
+40016730 bgeu x13,x15,0x400168fa
+40016748 call 0x4000f992(?, 'floor_gpio', ?, ?, ?, ?, ?, ?)
+4001674c c.beqz x10,0x4001679e
+40016764 call 0x4000f7c0(?, ?, ?, ?, ?, 0x40091000, ?, ?)
+4001676a c.j 0x400162c8
+40016770 jalr x1,290(x1)
+40016778 call 0x4005b9e0(0x40091474, ?, ?, ?, ?, ?, ?, ?)
+40016798 jalr x1,-14(x1)
+4001679c c.j 0x40016360
+400167a0 bne x9,x8,0x4001674e
+400167b4 call 0x4000f992(?, 'floor_level', ?, ?, 'ASCENSOR', R323, ?, ?)
+400167ba c.bnez x10,0x400167c2
+400167be beq x15,x9,0x40016a20
+400167d2 c.j 0x40016760
+400167d8 jalr x1,186(x1)
+400167f6 jalr x1,-108(x1)
+40016808 c.jr x1
+4001680e jalr x1,132(x1)
+40016816 call 0x4005b9e0(?, 'ASCENSOR', 0x40085414, R324, 'ASCENSOR', 0x40091000, ?, ?)
+40016836 jalr x1,-172(x1)
+4001683a c.j 0x400163e2
+4001685c jalr x1,-1668(x1)
+40016868 call 0x4000f826(?, ?, 1, 'load_config', 'err', R325, ?, ?)
+4001686e bne x10,x0,0x400166ce
+40016874 call 0x4000f884(?, ?, ?, ?, ?, ?, ?, ?)
+4001687a beq x10,x0,0x400166fe
+4001687e c.j 0x400166ce
+400168a0 jalr x1,-1736(x1)
+400168c4 jalr x1,-1772(x1)
+400168c8 call 0x400195cc(R327, './main/main.c', 0x362, 'initialize_panel', 'esp_ldo_acquire_channel(&touch_config, &ldo_touch)', ?, ?, ?)
+400168cc bne x10,x0,0x400165e0
+400168d0 call 0x40014e86(R328, ?, ?, ?, ?, ?, ?, ?)
+400168d4 c.j 0x400165e0
+400168f6 jalr x1,-1822(x1)
+400168fa STORE sb x14,-16(x3)  val='i2c_init()'
+400168fe c.j 0x40016734
+40016920 jalr x1,548(x1)
+40016944 jalr x1,-1900(x1)
+40016968 jalr x1,-1936(x1)
+4001698c jalr x1,-1972(x1)
+400169b0 jalr x1,-2008(x1)
+400169d4 jalr x1,368(x1)
+400169f8 jalr x1,2016(x1)

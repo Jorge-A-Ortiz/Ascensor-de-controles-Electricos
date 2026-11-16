@@ -7,6 +7,7 @@ idf_component_register(
         "elevator/elevator.c"
         "rules/rules.c"
         "ui/ui.c"
+        "ui/fonts_orig.c"
     INCLUDE_DIRS
         "."
         "include"

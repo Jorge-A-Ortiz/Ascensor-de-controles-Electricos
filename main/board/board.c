@@ -195,6 +195,15 @@ static esp_err_t lvgl_init(void)
         .hres          = LCD_PANEL_H_RES,
         .vres          = LCD_PANEL_V_RES,
         .monochrome    = false,
+        /* Con sw_rotate el driver ya recibe la imagen rotada; el callback de
+         * rotacion del puerto solo debe aplicar los flags dados. Se eligen de
+         * forma que en ROT_90 el resultado sea swap_xy(false) y mirror(false,
+         * false): asi no toca el panel DPI (que no soporta swap_xy). */
+        .rotation      = {
+            .swap_xy  = true,
+            .mirror_x = true,
+            .mirror_y = false,
+        },
         .flags = {
             .buff_dma     = true,
             .buff_spiram  = true,
@@ -218,10 +227,14 @@ static esp_err_t lvgl_init(void)
     ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_i2c(s_i2c_bus, &tp_io_cfg, &tp_io),
                         TAG, "touch io");
 
+    /* El GT911 entrega coordenadas en la orientacion nativa del panel
+     * (1024x600). NO se intercambian ejes aqui: LVGL 8 rota los puntos de
+     * entrada por su cuenta en indev_pointer_proc() usando disp_drv.rotated,
+     * asi que un swap en el controlador haria la rotacion dos veces. */
     esp_lcd_touch_handle_t tp = NULL;
     esp_lcd_touch_config_t tp_cfg = {
-        .x_max        = LCD_H_RES,   /* tras swap: eje X logico (600) */
-        .y_max        = LCD_V_RES,   /* tras swap: eje Y logico (1024) */
+        .x_max        = LCD_PANEL_H_RES,
+        .y_max        = LCD_PANEL_V_RES,
         .rst_gpio_num = BSP_TOUCH_RST_GPIO,
         .int_gpio_num = BSP_TOUCH_INT_GPIO,
         .levels = {
@@ -229,7 +242,7 @@ static esp_err_t lvgl_init(void)
             .interrupt = 0,
         },
         .flags = {
-            .swap_xy  = 1,
+            .swap_xy  = 0,
             .mirror_x = 0,
             .mirror_y = 0,
         },
@@ -253,8 +266,9 @@ static esp_err_t lvgl_init(void)
 
 esp_err_t board_init(void)
 {
-    ESP_RETURN_ON_ERROR(ledc_fade_func_install(0), TAG, "ledc fade");
+    /* LEDC exige un timer configurado antes de instalar el fade. */
     ESP_RETURN_ON_ERROR(backlight_init(), TAG, "backlight");
+    ESP_RETURN_ON_ERROR(ledc_fade_func_install(0), TAG, "ledc fade");
     board_set_backlight(0);
 
     ESP_RETURN_ON_ERROR(i2c_init(), TAG, "i2c");
