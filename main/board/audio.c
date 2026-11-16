@@ -27,6 +27,9 @@
 static const char *TAG = "SOUND";
 
 #define AUDIO_PA_GPIO     GPIO_NUM_30
+/* Segun Elecrow (AUDIO_GPIO_CTRL, logica invertida) el amplificador se
+ * habilita con el pin en BAJO. En alto queda apagado (silencio total). */
+#define AUDIO_PA_ON       0
 #define AUDIO_BCLK_GPIO   GPIO_NUM_22
 #define AUDIO_WS_GPIO     GPIO_NUM_21
 #define AUDIO_DOUT_GPIO   GPIO_NUM_23
@@ -54,7 +57,7 @@ static QueueHandle_t s_queue;
 static volatile uint8_t s_volume = 70;
 static bool s_ready;
 static audio_stats_t s_stats;
-static volatile int s_pa_force = 1;   /* como el original: amplificador siempre habilitado */
+static volatile int s_pa_force = AUDIO_PA_ON;   /* nivel del pin de control */
 static volatile bool s_tone_full;
 
 static int16_t s_sine[256];
@@ -262,7 +265,6 @@ static void audio_task(void *arg)
             continue;
         }
         int64_t t0 = esp_timer_get_time();
-        gpio_set_level(AUDIO_PA_GPIO, 1);
         for (uint8_t i = 0; i < job.n; i++) {
             play_note(&job.notes[i], buf);
         }
@@ -272,9 +274,6 @@ static void audio_task(void *arg)
         memset(buf, 0, sizeof(buf));
         size_t w = 0;
         i2s_channel_write(s_tx, buf, sizeof(buf), &w, 100);
-        if (uxQueueMessagesWaiting(s_queue) == 0 && s_pa_force < 0) {
-            gpio_set_level(AUDIO_PA_GPIO, 0);
-        }
         s_tone_full = false;
     }
 }
@@ -298,7 +297,7 @@ esp_err_t audio_init(uint8_t volume)
     if (err != ESP_OK) {
         return err;
     }
-    gpio_set_level(AUDIO_PA_GPIO, 1);
+    gpio_set_level(AUDIO_PA_GPIO, AUDIO_PA_ON);
 
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO,
                                                             I2S_ROLE_MASTER);

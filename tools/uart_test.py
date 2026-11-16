@@ -219,7 +219,7 @@ time.sleep(4)   # deja que termine la cola de sonidos de las pruebas anteriores
 a0 = kv((cmd("audiostat") or [""])[0])
 cmd("tone 1000 600", 0.1)
 mid = kv((cmd("audiostat", 0.25) or [""])[0])
-check("el amplificador (GPIO30) esta habilitado al sonar", mid.get("pa") == "1", mid)
+check("el amplificador (GPIO30) esta habilitado (nivel BAJO, logica invertida)", mid.get("pa") == "0", mid)
 time.sleep(0.9)
 a1 = kv((cmd("audiostat") or [""])[0])
 check("se reproduce una secuencia mas", int(a1.get("jobs", 0)) == int(a0.get("jobs", 0)) + 1, (a0, a1))
@@ -227,7 +227,7 @@ check("sin errores de escritura I2S", a1.get("write_errors") == "0", a1)
 dframes = int(a1.get("frames", 0)) - int(a0.get("frames", 0))
 check("un tono de 600 ms escribe 9600 muestras (16 kHz)", 9500 <= dframes <= 9700, dframes)
 check("duracion real cercana a 600 ms (cola DMA adelanta ~60 ms)", 480 <= int(a1.get("last_job_ms", 0)) <= 680, a1)
-check("el amplificador sigue habilitado (como el original)", a1.get("pa") == "1", a1)
+check("el amplificador sigue habilitado tras sonar", a1.get("pa") == "0", a1)
 r = cmd("sampleio", 1.2)
 edges = dict(re.findall(r"(\w+)\(GPIO\d+\)=(\d+)", r[0])) if r else {}
 check("LRCK/WS (GPIO21) conmuta a ~16 kHz (630-650 flancos en 20 ms)",
