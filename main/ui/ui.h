@@ -5,6 +5,8 @@
  * @brief Interfaz LVGL de tres pantallas: Exterior, Interior y Tecnica.
  */
 
+#include <stdbool.h>
+
 #include "esp_err.h"
 
 #include "elevator.h"
@@ -24,6 +26,13 @@ void ui_on_event(const elevator_event_t *ev);
 
 /** @brief Muestra un aviso modal con boton CERRAR. */
 void ui_show_message(const char *title, const char *text);
+
+/* Ganchos de prueba para la consola UART */
+bool ui_test_click(const char *name, int arg);
+bool ui_test_dd(const char *name, int a, int sel);
+void ui_test_goto(int idx);
+void ui_test_swipe(int dir);
+void ui_test_dump(void);
 
 #ifdef __cplusplus
 }

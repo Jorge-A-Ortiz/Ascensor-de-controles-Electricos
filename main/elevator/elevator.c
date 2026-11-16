@@ -71,7 +71,8 @@ static void open_doors(void)
     if (!s_state.doors_open) {
         s_state.doors_open = true;
         s_doors_deadline_ms = now_ms() + DOORS_OPEN_MS;
-        emit(ELEV_EVT_DOORS, s_state.current_floor, "Puertas abiertas");
+        emit(ELEV_EVT_DOORS, s_state.current_floor,
+             "Puertas abiertas: ya puedes entrar o salir.");
         ESP_LOGI(TAG, "Llegada a P%02u - cabina detenida.", s_state.current_floor);
     }
 }
@@ -199,14 +200,23 @@ static void demo_step(void)
     }
 
     s_state.position_known = true;
-    emit(ELEV_EVT_POSITION, s_state.current_floor, "Posicion simulada");
+    {
+        char pmsg[48];
+        snprintf(pmsg, sizeof(pmsg), "La cabina pasa por el piso %u.",
+                 s_state.current_floor);
+        emit(ELEV_EVT_POSITION, s_state.current_floor, pmsg);
+    }
 
     if (s_state.current_floor == s_target) {
         s_state.moving = false;
         s_has_target = false;
         s_state.dir = ELEV_DIR_IDLE;
         clear_pending(s_target);
-        emit(ELEV_EVT_ARRIVED, s_target, "Cabina detenida");
+        {
+            char amsg[56];
+            snprintf(amsg, sizeof(amsg), "Llegada a P%02u \xC2\xB7 cabina detenida.", s_target);
+            emit(ELEV_EVT_ARRIVED, s_target, amsg);
+        }
         open_doors();
     }
 }
@@ -256,7 +266,11 @@ static void read_sensors(void)
             s_has_target = false;
             s_state.dir = ELEV_DIR_IDLE;
             clear_pending((uint8_t)active_floor);
-            emit(ELEV_EVT_ARRIVED, (uint8_t)active_floor, "Cabina detenida");
+            {
+                char amsg[56];
+                snprintf(amsg, sizeof(amsg), "Llegada a P%02u \xC2\xB7 cabina detenida.", active_floor);
+                emit(ELEV_EVT_ARRIVED, (uint8_t)active_floor, amsg);
+            }
             open_doors();
         }
         return;
@@ -363,12 +377,12 @@ void elevator_set_demo(bool demo)
 esp_err_t elevator_call(uint8_t floor, elevator_dir_t dir)
 {
     if (floor < 1 || floor > s_cfg.floors) {
-        emit(ELEV_EVT_LIMIT, floor, "Limite de recorrido alcanzado.");
+        emit(ELEV_EVT_LIMIT, floor, "L\xC3\xADmite de recorrido alcanzado.");
         return ESP_ERR_INVALID_ARG;
     }
 
     if (floor == s_state.current_floor && !s_state.moving) {
-        emit(ELEV_EVT_REJECTED, floor, "La cabina ya esta en este piso.");
+        emit(ELEV_EVT_REJECTED, floor, "La cabina ya est\xC3\xA1 en este piso.");
         if (s_state.position_known) {
             open_doors();
         }
@@ -377,7 +391,7 @@ esp_err_t elevator_call(uint8_t floor, elevator_dir_t dir)
 
     if (s_pending[floor - 1]) {
         emit(ELEV_EVT_REJECTED, floor,
-             "Ese piso ya esta incluido en el recorrido.");
+             "Ese piso ya est\xC3\xA1 incluido en el recorrido.");
         return ESP_OK;
     }
 
@@ -385,7 +399,7 @@ esp_err_t elevator_call(uint8_t floor, elevator_dir_t dir)
 
     if (dir == ELEV_DIR_UP || dir == ELEV_DIR_DOWN) {
         char msg[64];
-        snprintf(msg, sizeof(msg), "Llamada P%02u - %s", floor,
+        snprintf(msg, sizeof(msg), "Llamada P%02u \xC2\xB7 %s", floor,
                  dir == ELEV_DIR_UP ? "subiendo" : "bajando");
         emit(ELEV_EVT_MOVING, floor, msg);
     }
@@ -410,7 +424,7 @@ void elevator_tick(void)
 
     if (s_state.doors_open && now >= s_doors_deadline_ms) {
         s_state.doors_open = false;
-        emit(ELEV_EVT_DOORS, s_state.current_floor, "Puertas cerradas");
+        emit(ELEV_EVT_DOORS, s_state.current_floor, "Puertas cerradas.");
         plan_next();
     }
 

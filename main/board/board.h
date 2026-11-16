@@ -50,6 +50,21 @@ void board_set_backlight(uint8_t percent);
  */
 void board_sound(board_sound_t sound);
 
+/* Metricas de renderizado de LVGL (ver comando "perf" de la consola) */
+typedef struct {
+    uint32_t refreshes;   /* ciclos de refresco completados */
+    uint32_t total_ms;    /* suma de tiempo render+volcado */
+    uint32_t max_ms;      /* peor ciclo */
+    uint64_t total_px;    /* pixeles redibujados */
+    uint32_t window_ms;   /* tiempo transcurrido desde el reset */
+} board_perf_t;
+
+void board_perf_get(board_perf_t *out);
+
+/* 0 = el PPA rota igual que LVGL; >0 pixeles distintos; <0 error */
+int board_ppa_selftest(void);
+void board_perf_reset(void);
+
 /** @brief Handle del bus I2C compartido (tactil y perifericos). */
 void *board_i2c_bus(void);
 

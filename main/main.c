@@ -17,7 +17,9 @@
 
 #include "app.h"
 #include "board.h"
+#include "audio.h"
 #include "board_config.h"
+#include "cli.h"
 #include "elevator.h"
 #include "rules.h"
 #include "ui.h"
@@ -135,8 +137,15 @@ void app_main(void)
     /* 2. Hardware */
     ESP_ERROR_CHECK(board_init());
 
+    esp_err_t aerr = audio_init(app_state()->cfg.sound);
+    if (aerr != ESP_OK) {
+        ESP_LOGW(TAG, "Audio no disponible: %s", esp_err_to_name(aerr));
+    }
+
     /* 3. Interfaz */
     ESP_ERROR_CHECK(ui_create());
+    audio_play(AUDIO_SND_BOOT);
+    cli_start();
 
     /* 4. Timers de control */
     const esp_timer_create_args_t motion_args = {

@@ -22,6 +22,7 @@
 #include "lvgl.h"
 
 #include "app.h"
+#include "audio.h"
 #include "board.h"
 #include "board_config.h"
 #include "elevator.h"
@@ -124,12 +125,21 @@ static lv_obj_t *s_blk_sw;
 static lv_obj_t *s_blk_list;
 static lv_obj_t *s_msgbox;
 
+static lv_obj_t *s_b_prev, *s_b_next, *s_b_up, *s_b_down;
+static lv_obj_t *s_b_minus, *s_b_plus, *s_b_mode, *s_b_edit, *s_b_back, *s_b_add;
+
 static uint8_t s_user_floor = 1;
 static elevator_state_t s_last_state;
 
 /* ------------------------------------------------------------------ */
 /*  Helpers (equivalentes a make_label / make_button / make_panel)    */
 /* ------------------------------------------------------------------ */
+
+static void tap_cb(lv_event_t *e)
+{
+    (void)e;
+    audio_play(AUDIO_SND_TAP);
+}
 
 static lv_obj_t *make_label(lv_obj_t *parent, int x, int y, int w, int h,
                             const char *txt, const lv_font_t *font,
@@ -178,6 +188,7 @@ static lv_obj_t *make_button(lv_obj_t *parent, int x, int y, int w, int h,
     lv_obj_set_style_shadow_width(b, 0, 0);
     lv_obj_set_style_text_color(b, lv_color_hex(COL_BTN_TEXT), 0);
     lv_obj_set_style_text_font(b, &F21, 0);
+    lv_obj_add_event_cb(b, tap_cb, LV_EVENT_PRESSED, NULL);
     if (cb != NULL) {
         lv_obj_add_event_cb(b, cb, LV_EVENT_CLICKED, (void *)id);
     }
@@ -194,6 +205,7 @@ static void style_dropdown(lv_obj_t *dd, const lv_font_t *font);
 
 static void dd_open_cb(lv_event_t *e)
 {
+    audio_play(AUDIO_SND_OPEN);
     lv_obj_t *list = lv_dropdown_get_list(lv_event_get_target(e));
     if (list == NULL) {
         return;
@@ -247,6 +259,7 @@ static void goto_screen(int idx, bool from_right)
     if (idx < 0 || idx > 2 || idx == s_cur_scr) {
         return;
     }
+    audio_play(from_right ? AUDIO_SND_SWIPE_NEXT : AUDIO_SND_SWIPE_PREV);
     s_cur_scr = idx;
     lv_scr_load_anim(s_scr[idx],
                      from_right ? LV_SCR_LOAD_ANIM_OVER_LEFT
@@ -277,9 +290,43 @@ static lv_obj_t *new_screen(void)
     return s;
 }
 
+/* Boton de sonido (mejora respecto al original): silencia / activa los avisos */
+static lv_obj_t *s_snd_lbl[3];
+static int s_snd_count;
+
+static const char *snd_icon(void)
+{
+    return audio_get_volume() > 0 ? LV_SYMBOL_VOLUME_MAX : LV_SYMBOL_MUTE;
+}
+
+static void snd_toggle_cb(lv_event_t *e)
+{
+    (void)e;
+    app_state_t *app = app_state();
+    app->cfg.sound = (audio_get_volume() > 0) ? 0 : 70;
+    audio_set_volume(app->cfg.sound);
+    storage_save_config(&app->cfg);
+    for (int i = 0; i < s_snd_count; i++) {
+        lv_label_set_text(s_snd_lbl[i], snd_icon());
+    }
+    audio_play(AUDIO_SND_ON);
+}
+
+static void make_sound_button(lv_obj_t *scr)
+{
+    if (s_snd_count >= 3) {
+        return;
+    }
+    lv_obj_t *lbl = NULL;
+    lv_obj_t *b = make_button(scr, 496, 34, 60, 46, snd_icon(), snd_toggle_cb, 0, &lbl);
+    (void)b;
+    s_snd_lbl[s_snd_count++] = lbl;
+}
+
 /* Puntos indicadores + aviso inferior (0x40014dc8 del original) */
 static void make_footer(lv_obj_t *scr, int active, uint32_t accent)
 {
+    make_sound_button(scr);
     for (int i = 0; i < 3; i++) {
         lv_obj_t *d = make_panel(scr, 270 + 24 * i, 948, 8, 8);
         lv_obj_set_style_bg_color(d, lv_color_hex(i == active ? accent
@@ -324,28 +371,57 @@ void ui_show_message(const char *title, const char *body)
 /*  Pantalla 1: EXTERIOR                                              */
 /* ------------------------------------------------------------------ */
 
+static void set_txt(lv_obj_t *l, const char *txt)
+{
+    if (l != NULL && strcmp(lv_label_get_text(l), txt) != 0) {
+        lv_label_set_text(l, txt);
+    }
+}
+
+static void set_hint(const char *txt)
+{
+    if (s_ext_hint != NULL) {
+        lv_label_set_text(s_ext_hint, txt);
+    }
+}
+
 static void ext_cb(lv_event_t *e)
 {
     intptr_t id = (intptr_t)lv_event_get_user_data(e);
     uint8_t floors = app_state()->cfg.floors;
+    char buf[96];
 
     switch (id) {
     case ID_PREV:
         if (s_user_floor > 1) {
             s_user_floor--;
+            audio_play_floor(AUDIO_SND_PRESS, s_user_floor);
+            snprintf(buf, sizeof(buf),
+                     "Ahora estás en el piso %u. Pulsa SUBIR o BAJAR.", s_user_floor);
+            set_hint(buf);
+        } else {
+            audio_play(AUDIO_SND_ERROR);
+            set_hint("Ya estás en el piso más bajo.");
         }
         break;
     case ID_NEXT:
         if (s_user_floor < floors) {
             s_user_floor++;
+            audio_play_floor(AUDIO_SND_PRESS, s_user_floor);
+            snprintf(buf, sizeof(buf),
+                     "Ahora estás en el piso %u. Pulsa SUBIR o BAJAR.", s_user_floor);
+            set_hint(buf);
+        } else {
+            audio_play(AUDIO_SND_ERROR);
+            set_hint("Ya estás en el piso más alto.");
         }
         break;
     case ID_UP:
-        board_sound(BOARD_SOUND_PRESS);
+        audio_play(AUDIO_SND_CALL_UP);
         elevator_call(s_user_floor, ELEV_DIR_UP);
         break;
     case ID_DOWN:
-        board_sound(BOARD_SOUND_PRESS);
+        audio_play(AUDIO_SND_CALL_DOWN);
         elevator_call(s_user_floor, ELEV_DIR_DOWN);
         break;
     default:
@@ -362,8 +438,8 @@ static void create_exterior(lv_obj_t *scr)
                LV_TEXT_ALIGN_CENTER);
     s_ext_user_floor = make_label(scr, 100, 182, 400, 144, "", &F66, EXT_TEXT,
                                   LV_TEXT_ALIGN_CENTER);
-    make_button(scr, 90, 358, 190, 66, "Piso anterior", ext_cb, ID_PREV, NULL);
-    make_button(scr, 320, 358, 190, 66, "Piso siguiente", ext_cb, ID_NEXT, NULL);
+    s_b_prev = make_button(scr, 90, 358, 190, 66, "Piso anterior", ext_cb, ID_PREV, NULL);
+    s_b_next = make_button(scr, 320, 358, 190, 66, "Piso siguiente", ext_cb, ID_NEXT, NULL);
 
     lv_obj_t *p = make_panel(scr, 44, 470, 512, 170);
     lv_obj_set_style_bg_color(p, lv_color_hex(COL_PANEL_EXT), 0);
@@ -382,12 +458,14 @@ static void create_exterior(lv_obj_t *scr)
                                ext_cb, ID_UP, NULL);
     lv_obj_t *dn = make_button(scr, 310, 746, 246, 112, LV_SYMBOL_DOWN "  BAJAR",
                                ext_cb, ID_DOWN, NULL);
+    s_b_up = up;
+    s_b_down = dn;
     lv_obj_set_style_bg_color(up, lv_color_hex(COL_CALL), 0);
     lv_obj_set_style_bg_color(dn, lv_color_hex(COL_CALL), 0);
     lv_obj_set_style_text_font(up, &F38, 0);
     lv_obj_set_style_text_font(dn, &F38, 0);
 
-    s_ext_hint = make_label(scr, 40, 884, 520, 48, "Tu piso se ilumina al llegar.",
+    s_ext_hint = make_label(scr, 40, 884, 520, 48, "1) Elige tu piso   2) Pulsa SUBIR o BAJAR   3) Espera la campanilla",
                             &F19, EXT_MUTED, LV_TEXT_ALIGN_CENTER);
     make_footer(scr, 0, EXT_ACCENT);
 }
@@ -399,7 +477,7 @@ static void create_exterior(lv_obj_t *scr)
 static void int_floor_cb(lv_event_t *e)
 {
     uint32_t floor = (uint32_t)(uintptr_t)lv_event_get_user_data(e);
-    board_sound(BOARD_SOUND_PRESS);
+    audio_play_floor(AUDIO_SND_PRESS, (int)floor);
     elevator_call((uint8_t)floor, ELEV_DIR_IDLE);
     ui_refresh();
 }
@@ -432,7 +510,7 @@ static void rebuild_interior_buttons(void)
 
 static void create_interior(lv_obj_t *scr)
 {
-    make_label(scr, 44, 42, 480, 28, "ASCENSOR / INTERIOR", &F21, INT_MUTED,
+    make_label(scr, 44, 42, 400, 28, "ASCENSOR / INTERIOR", &F21, INT_MUTED,
                LV_TEXT_ALIGN_LEFT);
     make_label(scr, 40, 111, 520, 30, "ESTÁS AQUÍ", &F25, INT_MUTED,
                LV_TEXT_ALIGN_CENTER);
@@ -451,7 +529,7 @@ static void create_interior(lv_obj_t *scr)
     lv_obj_set_scrollbar_mode(s_int_grid, LV_SCROLLBAR_MODE_OFF);
 
     s_int_status = make_label(scr, 40, 895, 520, 24,
-                              "Tu piso se ilumina al llegar.", &F19, INT_MUTED,
+                              "Toca el piso al que quieres ir: la cabina lo agrega a su ruta.", &F19, INT_MUTED,
                               LV_TEXT_ALIGN_CENTER);
     make_footer(scr, 1, INT_ACCENT);
 }
@@ -547,18 +625,25 @@ static void tec_floors_cb(lv_event_t *e)
     app_state_t *app = app_state();
 
     if (!app->cfg.demo_mode) {
+        audio_play(AUDIO_SND_ERROR);
         tec_note("Desactiva GPIO antes de cambiar los pisos.");
         return;
     }
     if (app->cfg.blocks_enabled) {
+        audio_play(AUDIO_SND_ERROR);
         tec_note("Desactiva los bloques antes de usar sensores de piso.");
         return;
     }
     if (id == ID_MINUS && app->cfg.floors > ELEVATOR_MIN_FLOORS) {
         app->cfg.floors--;
+        audio_play(AUDIO_SND_MINUS);
     } else if (id == ID_PLUS && app->cfg.floors < ELEVATOR_MAX_FLOORS) {
         app->cfg.floors++;
+        audio_play(AUDIO_SND_PLUS);
     } else {
+        audio_play(AUDIO_SND_ERROR);
+        tec_note(id == ID_MINUS ? "Mínimo de pisos alcanzado."
+                                : "Máximo de pisos alcanzado.");
         return;
     }
     if (s_user_floor > app->cfg.floors) {
@@ -584,11 +669,13 @@ static void tec_mode_cb(lv_event_t *e)
             }
         }
         if (!any) {
+            audio_play(AUDIO_SND_ERROR);
             tec_note("Asigna al menos un GPIO a un piso.");
             return;
         }
     }
     app->cfg.demo_mode = !app->cfg.demo_mode;
+    audio_play(app->cfg.demo_mode ? AUDIO_SND_OFF : AUDIO_SND_ON);
     app_apply_config();
     tec_note(app->cfg.demo_mode ? "Demo activa: posición simulada."
                                 : "GPIO reales activos. Filtrado de 30 ms.");
@@ -599,6 +686,8 @@ static void tec_mode_cb(lv_event_t *e)
 static void tec_floor_sel_cb(lv_event_t *e)
 {
     s_sel_floor = (uint8_t)(lv_dropdown_get_selected(lv_event_get_target(e)) + 1);
+    audio_play_floor(AUDIO_SND_PRESS, s_sel_floor);
+    tec_note("Configuras este piso: elige qué GPIO lo detecta y con qué nivel.");
     refresh_tech_labels();
 }
 
@@ -608,6 +697,7 @@ static void tec_gpio_cb(lv_event_t *e)
     int sel = (int)lv_dropdown_get_selected(lv_event_get_target(e));
 
     if (!app->cfg.demo_mode) {
+        audio_play(AUDIO_SND_ERROR);
         tec_note("Cambia a DEMO antes de editar las entradas.");
         refresh_tech_labels();
         return;
@@ -616,6 +706,7 @@ static void tec_gpio_cb(lv_event_t *e)
     for (int i = 0; i < app->cfg.floors; i++) {
         if (i != (s_sel_floor - 1) && gpio != 0xFF &&
             app->cfg.floor_gpio[i] == gpio) {
+            audio_play(AUDIO_SND_ERROR);
             tec_note("Ese GPIO ya identifica otro piso.");
             refresh_tech_labels();
             return;
@@ -623,6 +714,7 @@ static void tec_gpio_cb(lv_event_t *e)
     }
     app->cfg.floor_gpio[s_sel_floor - 1] = gpio;
     app_apply_config();
+    audio_play(AUDIO_SND_OK);
     tec_note("Regla GPIO guardada.");
     refresh_tech_labels();
 }
@@ -631,6 +723,7 @@ static void tec_level_cb(lv_event_t *e)
 {
     app_state_t *app = app_state();
     if (!app->cfg.demo_mode) {
+        audio_play(AUDIO_SND_ERROR);
         tec_note("Cambia a DEMO antes de editar las entradas.");
         refresh_tech_labels();
         return;
@@ -638,12 +731,13 @@ static void tec_level_cb(lv_event_t *e)
     app->cfg.floor_level[s_sel_floor - 1] =
         (uint8_t)lv_dropdown_get_selected(lv_event_get_target(e));
     app_apply_config();
+    audio_play(AUDIO_SND_OK);
     tec_note("Regla GPIO guardada.");
 }
 
 static void create_tecnica(lv_obj_t *scr)
 {
-    make_label(scr, 44, 42, 500, 28, "ASCENSOR / TÉCNICA", &F21, TEC_ACCENT,
+    make_label(scr, 44, 42, 400, 28, "ASCENSOR / TÉCNICA", &F21, TEC_ACCENT,
                LV_TEXT_ALIGN_LEFT);
     make_label(scr, 44, 110, 512, 48, "Configura tu edificio", &F30, TEC_TEXT,
                LV_TEXT_ALIGN_LEFT);
@@ -653,13 +747,13 @@ static void create_tecnica(lv_obj_t *scr)
                LV_TEXT_ALIGN_LEFT);
     s_tec_count = make_label(p, 24, 64, 170, 56, "", &F59, TEC_ACCENT,
                              LV_TEXT_ALIGN_LEFT);
-    make_button(p, 272, 58, 90, 64, "-", tec_floors_cb, ID_MINUS, NULL);
-    make_button(p, 386, 58, 90, 64, "+", tec_floors_cb, ID_PLUS, NULL);
+    s_b_minus = make_button(p, 272, 58, 90, 64, "-", tec_floors_cb, ID_MINUS, NULL);
+    s_b_plus = make_button(p, 386, 58, 90, 64, "+", tec_floors_cb, ID_PLUS, NULL);
     make_label(p, 24, 154, 220, 24, "Origen de posición", &F21, TEC_MUTED,
                LV_TEXT_ALIGN_LEFT);
     s_tec_mode_lbl = make_label(p, 24, 182, 180, 32, "", &F30, TEC_TEXT,
                                 LV_TEXT_ALIGN_LEFT);
-    make_button(p, 248, 150, 230, 60, "MODO DEMO", tec_mode_cb, ID_MODE,
+    s_b_mode = make_button(p, 248, 150, 230, 60, "MODO DEMO", tec_mode_cb, ID_MODE,
                 &s_tec_mode_btn_lbl);
 
     make_label(scr, 44, 453, 290, 36, "Regla por piso", &F30, TEC_TEXT,
@@ -698,9 +792,9 @@ static void create_tecnica(lv_obj_t *scr)
     s_tec_then = make_label(then, 24, 26, 465, 32, "", &F25, TEC_GREEN,
                             LV_TEXT_ALIGN_LEFT);
 
-    s_tec_note = make_label(scr, 40, 823, 520, 45, "", &F19, TEC_MUTED,
-                            LV_TEXT_ALIGN_CENTER);
-    make_button(scr, 44, 878, 512, 57, "EDITAR BLOQUES Y NOTAS", open_blocks_cb,
+    s_tec_note = make_label(scr, 40, 823, 520, 45, "Elige el piso, asigna su GPIO y el nivel con el que se activa.",
+                            &F19, TEC_MUTED, LV_TEXT_ALIGN_CENTER);
+    s_b_edit = make_button(scr, 44, 878, 512, 57, "EDITAR BLOQUES Y NOTAS", open_blocks_cb,
                 ID_EDIT, NULL);
     make_footer(scr, 2, TEC_ACCENT);
 }
@@ -718,12 +812,14 @@ static void rebuild_block_rows_async(void *unused)
 static void close_blocks_cb(lv_event_t *e)
 {
     (void)e;
+    audio_play(AUDIO_SND_SWIPE_PREV);
     lv_scr_load_anim(s_scr[2], LV_SCR_LOAD_ANIM_OVER_RIGHT, 200, 0, false);
 }
 
 static void open_blocks_cb(lv_event_t *e)
 {
     (void)e;
+    audio_play(AUDIO_SND_SWIPE_NEXT);
     refresh_tech_labels();
     lv_scr_load_anim(s_scr_blocks, LV_SCR_LOAD_ANIM_OVER_LEFT, 200, 0, false);
 }
@@ -731,10 +827,12 @@ static void open_blocks_cb(lv_event_t *e)
 static bool blocks_editable(void)
 {
     if (!app_state()->cfg.demo_mode) {
+        audio_play(AUDIO_SND_ERROR);
         ui_show_message("Bloques", "Cambia a DEMO antes de editar bloques.");
         return false;
     }
     if (app_state()->cfg.blocks_enabled) {
+        audio_play(AUDIO_SND_ERROR);
         ui_show_message("Reglas activas",
                         "Desactiva las reglas para editarlas.");
         return false;
@@ -752,9 +850,11 @@ static void blk_sw_cb(lv_event_t *e)
         if (on) {
             lv_obj_clear_state(sw, LV_STATE_CHECKED);
         }
+        audio_play(AUDIO_SND_ERROR);
         ui_show_message("No se pudo activar", err);
         return;
     }
+    audio_play(on ? AUDIO_SND_POWER_ON : AUDIO_SND_POWER_OFF);
     refresh_tech_labels();
 }
 
@@ -765,11 +865,13 @@ static void blk_add_cb(lv_event_t *e)
         return;
     }
     if (app_add_block(NULL) != ESP_OK) {
+        audio_play(AUDIO_SND_ERROR);
         ui_show_message("Capacidad completa",
                         "32 bloques compartidos entre todos los pisos.");
         return;
     }
     app_save_blocks();
+    audio_play(AUDIO_SND_ADD);
     rebuild_block_rows();
     refresh_tech_labels();
 }
@@ -781,6 +883,7 @@ static void blk_delete_cb(lv_event_t *e)
         return;
     }
     app_remove_block(idx);
+    audio_play(AUDIO_SND_REMOVE);
     lv_async_call(rebuild_block_rows_async, NULL);
     refresh_tech_labels();
 }
@@ -807,6 +910,7 @@ static void blk_dd_cb(lv_event_t *e)
     default: break;
     }
     app_save_blocks();
+    audio_play(AUDIO_SND_OK);
 }
 
 static lv_obj_t *blk_dropdown(lv_obj_t *parent, const char *options,
@@ -903,7 +1007,7 @@ static void create_blocks_screen(void)
 
     make_label(scr, 44, 42, 330, 28, "EDITAR BLOQUES Y NOTAS", &F21, TEC_ACCENT,
                LV_TEXT_ALIGN_LEFT);
-    make_button(scr, 420, 30, 136, 50, "VOLVER", close_blocks_cb, 0, NULL);
+    s_b_back = make_button(scr, 420, 30, 136, 50, "VOLVER", close_blocks_cb, 0, NULL);
 
     lv_obj_t *head = make_panel(scr, 44, 100, 512, 120);
     make_label(head, 24, 14, 330, 30, "Programación por bloques", &F25, TEC_TEXT,
@@ -914,7 +1018,7 @@ static void create_blocks_screen(void)
     lv_obj_add_event_cb(s_blk_sw, blk_sw_cb, LV_EVENT_VALUE_CHANGED, NULL);
     s_blk_status = make_label(head, 24, 70, 460, 28, "", &F21, TEC_MUTED,
                               LV_TEXT_ALIGN_LEFT);
-    make_button(scr, 44, 234, 512, 60, "+ Agregar condicional a este piso",
+    s_b_add = make_button(scr, 44, 234, 512, 60, "+ Agregar condicional a este piso",
                 blk_add_cb, 0, NULL);
 
     s_blk_list = lv_obj_create(scr);
@@ -979,44 +1083,53 @@ static void update_floor_button_states(const elevator_state_t *st)
 
 void ui_refresh(void)
 {
+    elevator_state_t st;
+    elevator_get_state(&st);
+
+    static uint8_t shown_user = 0;
+    static bool first = true;
+    if (!first && memcmp(&st, &s_last_state, sizeof(st)) == 0 &&
+        shown_user == s_user_floor) {
+        return;   /* nada que redibujar: evita trabajo inutil cada 100 ms */
+    }
+
     if (!board_lock(100)) {
         return;
     }
-
-    elevator_state_t st;
-    elevator_get_state(&st);
+    first = false;
+    shown_user = s_user_floor;
 
     char buf[64];
 
     /* Exterior */
     snprintf(buf, sizeof(buf), "P%02u", s_user_floor);
-    lv_label_set_text(s_ext_user_floor, buf);
+    set_txt(s_ext_user_floor, buf);
 
     if (st.position_known) {
         snprintf(buf, sizeof(buf), "P%02u", st.current_floor);
     } else {
         snprintf(buf, sizeof(buf), "--");
     }
-    lv_label_set_text(s_ext_cabin_floor, buf);
+    set_txt(s_ext_cabin_floor, buf);
 
     const char *dir_txt;
+    char dbuf[48];
     if (st.dir == ELEV_DIR_UP) {
-        snprintf(buf, sizeof(buf), "%s · P%02u", "SUBIENDO", st.current_floor);
-        dir_txt = buf;
+        snprintf(dbuf, sizeof(dbuf), "%s \xC2\xB7 P%02u", "SUBIENDO", st.current_floor);
+        dir_txt = dbuf;
     } else if (st.dir == ELEV_DIR_DOWN) {
-        snprintf(buf, sizeof(buf), "%s · P%02u", "BAJANDO", st.current_floor);
-        dir_txt = buf;
+        snprintf(dbuf, sizeof(dbuf), "%s \xC2\xB7 P%02u", "BAJANDO", st.current_floor);
+        dir_txt = dbuf;
     } else {
-        dir_txt = st.doors_open ? "DETENIDO · PUERTAS ABIERTAS"
-                                : "DETENIDO · PUERTAS CERRADAS";
+        dir_txt = st.doors_open ? "DETENIDO \xC2\xB7 PUERTAS ABIERTAS"
+                                : "DETENIDO \xC2\xB7 PUERTAS CERRADAS";
     }
-    lv_label_set_text(s_ext_dir, dir_txt);
+    set_txt(s_ext_dir, dir_txt);
     lv_obj_set_style_text_color(
         s_ext_dir, lv_color_hex(st.dir == ELEV_DIR_IDLE ? EXT_MUTED : COL_OK), 0);
 
-    lv_label_set_text(s_ext_arrow,
-                      st.dir == ELEV_DIR_UP ? LV_SYMBOL_UP
-                      : st.dir == ELEV_DIR_DOWN ? LV_SYMBOL_DOWN : "");
+    set_txt(s_ext_arrow, st.dir == ELEV_DIR_UP ? LV_SYMBOL_UP
+                         : st.dir == ELEV_DIR_DOWN ? LV_SYMBOL_DOWN : "");
     lv_obj_set_style_text_color(s_ext_arrow, lv_color_hex(COL_OK), 0);
 
     /* Interior */
@@ -1025,16 +1138,15 @@ void ui_refresh(void)
     } else {
         snprintf(buf, sizeof(buf), "--");
     }
-    lv_label_set_text(s_int_current, buf);
-    lv_label_set_text(s_int_dir,
-                      st.dir == ELEV_DIR_UP ? "subiendo"
-                      : st.dir == ELEV_DIR_DOWN ? "bajando" : "");
+    set_txt(s_int_current, buf);
+    set_txt(s_int_dir, st.dir == ELEV_DIR_UP ? "subiendo"
+                       : st.dir == ELEV_DIR_DOWN ? "bajando" : "");
     update_floor_button_states(&st);
 
     int changed = memcmp(&st, &s_last_state, sizeof(st)) != 0;
     if (changed && !st.position_known && !st.demo_mode) {
-        lv_label_set_text(s_int_status,
-                          "Posición sin confirmar: espera un sensor de piso.");
+        set_txt(s_int_status,
+                "Posici\xC3\xB3n sin confirmar: espera un sensor de piso.");
     }
     s_last_state = st;
 
@@ -1054,9 +1166,159 @@ void ui_on_event(const elevator_event_t *ev)
         lv_label_set_text(s_ext_hint, ev->message);
         board_unlock();
     }
-    if (ev->type == ELEV_EVT_ARRIVED) {
-        board_sound(BOARD_SOUND_ARRIVAL);
-    } else if (ev->type == ELEV_EVT_POSITION) {
-        board_sound(BOARD_SOUND_INTERMEDIATE);
+    switch (ev->type) {
+    case ELEV_EVT_MOVING:
+        if (ev->message == NULL || strncmp(ev->message, "Llamada", 7) != 0) {
+            audio_play(AUDIO_SND_MOVE);
+        }
+        break;
+    case ELEV_EVT_POSITION:
+        audio_play_floor(AUDIO_SND_BEEP, ev->floor);
+        break;
+    case ELEV_EVT_ARRIVED:
+        audio_play_floor(AUDIO_SND_ARRIVE, ev->floor);
+        break;
+    case ELEV_EVT_DOORS:
+        audio_play(ev->doors_open ? AUDIO_SND_DOOR_OPEN : AUDIO_SND_DOOR_CLOSE);
+        break;
+    case ELEV_EVT_REJECTED:
+        audio_play(AUDIO_SND_ERROR);
+        break;
+    case ELEV_EVT_LIMIT:
+        audio_play(AUDIO_SND_LIMIT);
+        break;
+    default:
+        break;
     }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Ganchos de prueba (los usa la consola UART: debug/cli.c)           */
+/*  Ejecutan exactamente los mismos callbacks que un toque real.      */
+/* ------------------------------------------------------------------ */
+
+static void send_click(lv_obj_t *o)
+{
+    lv_event_send(o, LV_EVENT_CLICKED, NULL);
+}
+
+bool ui_test_click(const char *name, int arg)
+{
+    lv_obj_t *o = NULL;
+    if (!strcmp(name, "prev")) o = s_b_prev;
+    else if (!strcmp(name, "next")) o = s_b_next;
+    else if (!strcmp(name, "up")) o = s_b_up;
+    else if (!strcmp(name, "down")) o = s_b_down;
+    else if (!strcmp(name, "minus")) o = s_b_minus;
+    else if (!strcmp(name, "plus")) o = s_b_plus;
+    else if (!strcmp(name, "mode")) o = s_b_mode;
+    else if (!strcmp(name, "edit")) o = s_b_edit;
+    else if (!strcmp(name, "back")) o = s_b_back;
+    else if (!strcmp(name, "add")) o = s_b_add;
+    else if (!strcmp(name, "floor") && arg >= 1 && arg <= s_int_btn_count)
+        o = s_int_btn[arg - 1];
+    else if (!strcmp(name, "del") && s_blk_list != NULL &&
+             arg >= 0 && (uint32_t)arg < lv_obj_get_child_cnt(s_blk_list)) {
+        lv_obj_t *box = lv_obj_get_child(s_blk_list, arg);
+        lv_obj_t *head = box ? lv_obj_get_child(box, 0) : NULL;
+        o = head ? lv_obj_get_child(head, 1) : NULL;
+    }
+    if (!strcmp(name, "blksw")) {
+        if (!board_lock(500)) {
+            return false;
+        }
+        if (lv_obj_has_state(s_blk_sw, LV_STATE_CHECKED)) {
+            lv_obj_clear_state(s_blk_sw, LV_STATE_CHECKED);
+        } else {
+            lv_obj_add_state(s_blk_sw, LV_STATE_CHECKED);
+        }
+        lv_event_send(s_blk_sw, LV_EVENT_VALUE_CHANGED, NULL);
+        board_unlock();
+        return true;
+    }
+    if (o == NULL) {
+        printf("ERR sin widget '%s' (%d)\n", name, arg);
+        return false;
+    }
+    if (!board_lock(500)) {
+        printf("ERR bloqueo LVGL ocupado >500 ms (%s)\n", name);
+        return false;
+    }
+    send_click(o);
+    board_unlock();
+    return true;
+}
+
+bool ui_test_dd(const char *name, int a, int sel)
+{
+    lv_obj_t *dd = NULL;
+    if (!strcmp(name, "tfloor")) dd = s_tec_dd_floor;
+    else if (!strcmp(name, "tgpio")) dd = s_tec_dd_gpio;
+    else if (!strcmp(name, "tlevel")) dd = s_tec_dd_level;
+    else if (!strcmp(name, "block") && s_blk_list != NULL &&
+             a >= 0 && (uint32_t)(a / 10) < lv_obj_get_child_cnt(s_blk_list)) {
+        /* a = idx*10 + campo (0..4) */
+        lv_obj_t *box = lv_obj_get_child(s_blk_list, a / 10);
+        lv_obj_t *row = box ? lv_obj_get_child(box, 1) : NULL;
+        int want = a % 10, n = 0;
+        for (uint32_t i = 0; row && i < lv_obj_get_child_cnt(row); i++) {
+            lv_obj_t *c = lv_obj_get_child(row, i);
+            if (lv_obj_check_type(c, &lv_dropdown_class)) {
+                if (n++ == want) { dd = c; break; }
+            }
+        }
+    }
+    if (dd == NULL || !board_lock(500)) {
+        return false;
+    }
+    lv_dropdown_set_selected(dd, sel);
+    lv_event_send(dd, LV_EVENT_VALUE_CHANGED, NULL);
+    board_unlock();
+    return true;
+}
+
+/* Cambio de pantalla CON animacion (igual que un gesto): dir>0 siguiente */
+void ui_test_swipe(int dir)
+{
+    if (!board_lock(500)) {
+        return;
+    }
+    goto_screen(s_cur_scr + (dir > 0 ? 1 : -1), dir > 0);
+    board_unlock();
+}
+
+void ui_test_goto(int idx)
+{
+    if (!board_lock(500)) {
+        return;
+    }
+    if (idx >= 0 && idx <= 2) {
+        s_cur_scr = idx;
+        lv_scr_load(s_scr[idx]);
+    } else if (idx == 3) {
+        lv_scr_load(s_scr_blocks);
+    }
+    board_unlock();
+}
+
+void ui_test_dump(void)
+{
+    if (!board_lock(500)) {
+        return;
+    }
+    printf("UI scr=%d user=%s cabin=%s dir='%s' ext_hint='%s'\n", s_cur_scr,
+           lv_label_get_text(s_ext_user_floor), lv_label_get_text(s_ext_cabin_floor),
+           lv_label_get_text(s_ext_dir), lv_label_get_text(s_ext_hint));
+    printf("UI int=%s status='%s' btns=%u\n", lv_label_get_text(s_int_current),
+           lv_label_get_text(s_int_status), s_int_btn_count);
+    printf("UI tec count=%s mode='%s' selfloor=%u gpio_sel=%u level_sel=%u read='%s' then='%s' note='%s'\n",
+           lv_label_get_text(s_tec_count), lv_label_get_text(s_tec_mode_lbl),
+           s_sel_floor, (unsigned)lv_dropdown_get_selected(s_tec_dd_gpio),
+           (unsigned)lv_dropdown_get_selected(s_tec_dd_level),
+           lv_label_get_text(s_tec_read), lv_label_get_text(s_tec_then),
+           lv_label_get_text(s_tec_note));
+    printf("UI blocks widgets=%u status='%s' sw=%d\n",
+           (unsigned)lv_obj_get_child_cnt(s_blk_list),
+           lv_label_get_text(s_blk_status), lv_obj_has_state(s_blk_sw, LV_STATE_CHECKED));
+    board_unlock();
 }

@@ -3,6 +3,8 @@ idf_component_register(
         "main.c"
         "app.c"
         "board/board.c"
+        "board/audio.c"
+        "debug/cli.c"
         "storage/storage.c"
         "elevator/elevator.c"
         "rules/rules.c"
@@ -12,6 +14,7 @@ idf_component_register(
         "."
         "include"
         "board"
+        "debug"
         "storage"
         "elevator"
         "rules"
@@ -21,6 +24,9 @@ idf_component_register(
         esp_driver_gpio
         esp_driver_ledc
         esp_driver_i2c
+        esp_driver_i2s
+        esp_driver_ppa
+        esp_driver_uart
         esp_lcd
         nvs_flash
         esp_timer

@@ -56,3 +56,6 @@ CONFIG_LV_USE_GRID=y
 
 # --- Cache: necesario para PPA / DSI en P4 ---
 CONFIG_CACHE_L2_CACHE_256KB=y
+
+# --- Rendimiento: -O2 (el valor por defecto -Og es de depuracion y frena LVGL) ---
+CONFIG_COMPILER_OPTIMIZATION_PERF=y

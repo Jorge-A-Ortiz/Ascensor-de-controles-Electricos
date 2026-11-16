@@ -11,13 +11,19 @@
 
 #include <string.h>
 
+#include "audio.h"
 #include "board_config.h"
 #include "esp_check.h"
 #include "esp_ldo_regulator.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 
 #include "driver/i2c_master.h"
 #include "driver/ledc.h"
+#include "driver/ppa.h"
+#include "esp_heap_caps.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 #include "esp_lcd_ek79007.h"
 #include "esp_lcd_io_i2c.h"
@@ -43,6 +49,32 @@ static esp_lcd_panel_io_handle_t s_io;
 static lv_disp_t *s_disp;
 static esp_ldo_channel_handle_t s_ldo_dsi;
 static esp_ldo_channel_handle_t s_ldo_touch;
+
+static board_perf_t s_perf;
+static int64_t s_perf_t0;
+
+static void monitor_cb(lv_disp_drv_t *drv, uint32_t time_ms, uint32_t px)
+{
+    (void)drv;
+    s_perf.refreshes++;
+    s_perf.total_ms += time_ms;
+    s_perf.total_px += px;
+    if (time_ms > s_perf.max_ms) {
+        s_perf.max_ms = time_ms;
+    }
+}
+
+void board_perf_reset(void)
+{
+    memset(&s_perf, 0, sizeof(s_perf));
+    s_perf_t0 = esp_timer_get_time();
+}
+
+void board_perf_get(board_perf_t *out)
+{
+    *out = s_perf;
+    out->window_ms = (uint32_t)((esp_timer_get_time() - s_perf_t0) / 1000);
+}
 
 /* ------------------------------------------------------------------ */
 /*  Retroiluminacion                                                   */
@@ -176,6 +208,135 @@ static esp_err_t display_init(void)
     return ESP_OK;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Volcado con rotacion por hardware (PPA), como el original          */
+/*                                                                     */
+/*  LVGL dibuja en vertical 600x1024 en buffers pequenos de RAM        */
+/*  interna; cada franja se rota 90 grados con el PPA directamente al  */
+/*  framebuffer del panel (1024x600). La rotacion por software de      */
+/*  LVGL costaba ~90 ms por pantalla completa; asi es casi gratis.     */
+/*                                                                     */
+/*  Correspondencia: logico (x, y) -> fisico (X = y, Y = 599 - x), la  */
+/*  misma que LV_DISP_ROT_90 de LVGL 8 (el PPA gira en sentido         */
+/*  antihorario, ver board_ppa_selftest()).                            */
+/* ------------------------------------------------------------------ */
+
+#define DRAW_BUF_LINES   48
+#define FB_BYTES         (LCD_PANEL_H_RES * LCD_PANEL_V_RES * 2)
+
+static ppa_client_handle_t s_ppa;
+static SemaphoreHandle_t s_ppa_done;
+
+static bool ppa_done_cb(ppa_client_handle_t client, ppa_event_data_t *event, void *user_data)
+{
+    BaseType_t woken = pdFALSE;
+    xSemaphoreGiveFromISR(s_ppa_done, &woken);
+    return woken == pdTRUE;
+}
+static uint8_t *s_fb;
+static lv_disp_draw_buf_t s_draw_buf;
+static lv_disp_drv_t s_disp_drv;
+
+/* El PPA se bloquea con areas de ancho/alto impares (p. ej. 425x67). Se
+ * redondean las areas a multiplos de 8 pixeles (600 y 1024 lo son). */
+static void rounder_cb(lv_disp_drv_t *drv, lv_area_t *a)
+{
+    a->x1 &= ~7;
+    a->y1 &= ~7;
+    a->x2 |= 7;
+    a->y2 |= 7;
+    if (a->x2 > (lv_coord_t)(drv->hor_res - 1)) {
+        a->x2 = drv->hor_res - 1;
+    }
+    if (a->y2 > (lv_coord_t)(drv->ver_res - 1)) {
+        a->y2 = drv->ver_res - 1;
+    }
+}
+
+static void ppa_flush_cb(lv_disp_drv_t *drv, const lv_area_t *a, lv_color_t *map)
+{
+    uint32_t w = a->x2 - a->x1 + 1;
+    uint32_t h = a->y2 - a->y1 + 1;
+
+    ppa_srm_oper_config_t cfg = {
+        .in = {
+            .buffer = map,
+            .pic_w = w, .pic_h = h,
+            .block_w = w, .block_h = h,
+            .block_offset_x = 0, .block_offset_y = 0,
+            .srm_cm = PPA_SRM_COLOR_MODE_RGB565,
+        },
+        .out = {
+            .buffer = s_fb,
+            .buffer_size = FB_BYTES,
+            .pic_w = LCD_PANEL_H_RES, .pic_h = LCD_PANEL_V_RES,
+            .block_offset_x = (uint32_t)a->y1,
+            .block_offset_y = (uint32_t)(LCD_PANEL_V_RES - 1 - a->x2),
+            .srm_cm = PPA_SRM_COLOR_MODE_RGB565,
+        },
+        .rotation_angle = PPA_SRM_ROTATION_ANGLE_90,
+        .scale_x = 1.0f,
+        .scale_y = 1.0f,
+        .mode = PPA_TRANS_MODE_NON_BLOCKING,
+    };
+    xSemaphoreTake(s_ppa_done, 0);
+    esp_err_t err = ppa_do_scale_rotate_mirror(s_ppa, &cfg);
+    if (err == ESP_OK && xSemaphoreTake(s_ppa_done, pdMS_TO_TICKS(200)) != pdTRUE) {
+        ESP_LOGE(TAG, "PPA sin respuesta (timeout) en area x%ld..%ld y%ld..%ld",
+                 (long)a->x1, (long)a->x2, (long)a->y1, (long)a->y2);
+        err = ESP_ERR_TIMEOUT;
+    }
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "PPA fallo (%s) en area %ld,%ld %lux%lu", esp_err_to_name(err),
+                 (long)a->x1, (long)a->y1, (unsigned long)w, (unsigned long)h);
+    }
+    lv_disp_flush_ready(drv);
+}
+
+/* Comprueba que el PPA produce exactamente la misma rotacion que LVGL
+ * (LV_DISP_ROT_90): dest[(w-1-x)*h + y] = src[y*w + x]. Devuelve el numero
+ * de pixeles distintos (0 = correcto). */
+int board_ppa_selftest(void)
+{
+    enum { W = 40, H = 24 };
+    uint16_t *src = heap_caps_aligned_alloc(64, 64 * 32 * 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    uint16_t *dst = heap_caps_aligned_alloc(64, 64 * 64 * 2, MALLOC_CAP_SPIRAM);
+    if (src == NULL || dst == NULL) {
+        free(src);
+        free(dst);
+        return -1;
+    }
+    for (int y = 0; y < H; y++) {
+        for (int x = 0; x < W; x++) {
+            src[y * W + x] = (uint16_t)(y * 64 + x + 1);
+        }
+    }
+    memset(dst, 0, H * W * 2);
+    ppa_srm_oper_config_t cfg = {
+        .in = { .buffer = src, .pic_w = W, .pic_h = H, .block_w = W, .block_h = H,
+                .srm_cm = PPA_SRM_COLOR_MODE_RGB565 },
+        .out = { .buffer = dst, .buffer_size = 64 * 64 * 2, .pic_w = H, .pic_h = W,
+                 .srm_cm = PPA_SRM_COLOR_MODE_RGB565 },
+        .rotation_angle = PPA_SRM_ROTATION_ANGLE_90,
+        .scale_x = 1.0f, .scale_y = 1.0f,
+        .mode = PPA_TRANS_MODE_BLOCKING,
+    };
+    int bad = -2;
+    if (ppa_do_scale_rotate_mirror(s_ppa, &cfg) == ESP_OK) {
+        bad = 0;
+        for (int y = 0; y < H; y++) {
+            for (int x = 0; x < W; x++) {
+                if (dst[(W - 1 - x) * H + y] != src[y * W + x]) {
+                    bad++;
+                }
+            }
+        }
+    }
+    free(src);
+    free(dst);
+    return bad;
+}
+
 static esp_err_t lvgl_init(void)
 {
     lvgl_port_cfg_t port_cfg = ESP_LVGL_PORT_INIT_CONFIG();
@@ -184,42 +345,42 @@ static esp_err_t lvgl_init(void)
     port_cfg.timer_period_ms = 5;
     ESP_RETURN_ON_ERROR(lvgl_port_init(&port_cfg), TAG, "lvgl port");
 
-    /* El panel es DSI (DPI): LVGL usa sus propios buffers y el puerto los
-     * vuelca al framebuffer. La rotacion a vertical se hace por software
-     * (sw_rotate), porque un panel DPI no acepta swap_xy por hardware. */
-    lvgl_port_display_cfg_t disp_cfg = {
-        .io_handle     = s_io,
-        .panel_handle  = s_panel,
-        .buffer_size   = LCD_PANEL_H_RES * 60,
-        .double_buffer = true,
-        .hres          = LCD_PANEL_H_RES,
-        .vres          = LCD_PANEL_V_RES,
-        .monochrome    = false,
-        /* Con sw_rotate el driver ya recibe la imagen rotada; el callback de
-         * rotacion del puerto solo debe aplicar los flags dados. Se eligen de
-         * forma que en ROT_90 el resultado sea swap_xy(false) y mirror(false,
-         * false): asi no toca el panel DPI (que no soporta swap_xy). */
-        .rotation      = {
-            .swap_xy  = true,
-            .mirror_x = true,
-            .mirror_y = false,
-        },
-        .flags = {
-            .buff_dma     = true,
-            .buff_spiram  = true,
-            .sw_rotate    = true,
-            .full_refresh = false,
-            .direct_mode  = false,
-        },
+    /* Framebuffer del panel DSI y cliente PPA */
+    void *fb0 = NULL, *fb1 = NULL;
+    ESP_RETURN_ON_ERROR(esp_lcd_dpi_panel_get_frame_buffer(s_panel, 2, &fb0, &fb1),
+                        TAG, "frame buffers");
+    s_fb = fb0;
+    ppa_client_config_t ppa_cfg = {
+        .oper_type = PPA_OPERATION_SRM,
+        .max_pending_trans_num = 1,
     };
-    lvgl_port_display_dsi_cfg_t dsi_cfg = {
-        .flags.avoid_tearing = false,
-    };
-    s_disp = lvgl_port_add_disp_dsi(&disp_cfg, &dsi_cfg);
-    ESP_RETURN_ON_FALSE(s_disp != NULL, ESP_FAIL, TAG, "lvgl disp");
+    ESP_RETURN_ON_ERROR(ppa_register_client(&ppa_cfg, &s_ppa), TAG, "ppa client");
+    s_ppa_done = xSemaphoreCreateBinary();
+    ESP_RETURN_ON_FALSE(s_ppa_done != NULL, ESP_ERR_NO_MEM, TAG, "ppa sem");
+    ppa_event_callbacks_t ppa_cbs = { .on_trans_done = ppa_done_cb };
+    ESP_RETURN_ON_ERROR(ppa_client_register_event_callbacks(s_ppa, &ppa_cbs), TAG, "ppa cb");
 
-    /* 90 grados: 1024x600 nativo -> 600x1024 logico. */
-    lv_disp_set_rotation(s_disp, LV_DISP_ROT_90);
+    /* Buffers de dibujo en RAM interna (mucho mas rapida que la PSRAM) */
+    size_t buf_px = (size_t)LCD_H_RES * DRAW_BUF_LINES;
+    lv_color_t *buf1 = heap_caps_aligned_alloc(64, buf_px * sizeof(lv_color_t),
+                                               MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    lv_color_t *buf2 = heap_caps_aligned_alloc(64, buf_px * sizeof(lv_color_t),
+                                               MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    ESP_RETURN_ON_FALSE(buf1 && buf2, ESP_ERR_NO_MEM, TAG, "draw buffers");
+
+    ESP_RETURN_ON_FALSE(lvgl_port_lock(0), ESP_FAIL, TAG, "lvgl lock");
+    lv_disp_draw_buf_init(&s_draw_buf, buf1, buf2, buf_px);
+    lv_disp_drv_init(&s_disp_drv);
+    s_disp_drv.hor_res    = LCD_H_RES;   /* logico vertical 600x1024 */
+    s_disp_drv.ver_res    = LCD_V_RES;
+    s_disp_drv.flush_cb   = ppa_flush_cb;
+    s_disp_drv.rounder_cb = rounder_cb;
+    s_disp_drv.draw_buf   = &s_draw_buf;
+    s_disp_drv.monitor_cb = monitor_cb;
+    s_disp = lv_disp_drv_register(&s_disp_drv);
+    lvgl_port_unlock();
+    ESP_RETURN_ON_FALSE(s_disp != NULL, ESP_FAIL, TAG, "lvgl disp");
+    board_perf_reset();
 
     esp_lcd_panel_io_handle_t tp_io = NULL;
     esp_lcd_panel_io_i2c_config_t tp_io_cfg = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
@@ -233,8 +394,8 @@ static esp_err_t lvgl_init(void)
      * asi que un swap en el controlador haria la rotacion dos veces. */
     esp_lcd_touch_handle_t tp = NULL;
     esp_lcd_touch_config_t tp_cfg = {
-        .x_max        = LCD_PANEL_H_RES,
-        .y_max        = LCD_PANEL_V_RES,
+        .x_max        = LCD_PANEL_H_RES - 1,
+        .y_max        = LCD_PANEL_V_RES - 1,
         .rst_gpio_num = BSP_TOUCH_RST_GPIO,
         .int_gpio_num = BSP_TOUCH_INT_GPIO,
         .levels = {
@@ -242,9 +403,9 @@ static esp_err_t lvgl_init(void)
             .interrupt = 0,
         },
         .flags = {
-            .swap_xy  = 0,
+            .swap_xy  = 1,
             .mirror_x = 0,
-            .mirror_y = 0,
+            .mirror_y = 1,
         },
     };
     ESP_RETURN_ON_ERROR(esp_lcd_touch_new_i2c_gt911(tp_io, &tp_cfg, &tp),
@@ -293,9 +454,11 @@ void board_unlock(void)
 
 void board_sound(board_sound_t sound)
 {
-    static const char *names[] = { "llegada", "pulsacion", "piso intermedio" };
-    ESP_LOGI(TAG, "aviso de audio: %s", names[sound]);
-    /* TODO: NS4168 por I2S (ver README, seccion Audio). */
+    switch (sound) {
+    case BOARD_SOUND_ARRIVAL:      audio_play(AUDIO_SND_ARRIVE); break;
+    case BOARD_SOUND_PRESS:        audio_play(AUDIO_SND_PRESS); break;
+    case BOARD_SOUND_INTERMEDIATE: audio_play(AUDIO_SND_BEEP); break;
+    }
 }
 
 void *board_i2c_bus(void)
