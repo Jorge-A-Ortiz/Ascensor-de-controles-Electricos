@@ -55,6 +55,10 @@ typedef struct {
     bool     doors_open;
     bool     demo_mode;
     bool     moving;
+    uint16_t cabin_calls, up_calls, down_calls;
+    uint16_t cabin_buttons, up_buttons, down_buttons;
+    bool fault;
+    elevator_dir_t observed_dir;   /* Last transition between distinct floor sensors. */
 } elevator_state_t;
 
 /**
@@ -75,14 +79,14 @@ void elevator_get_state(elevator_state_t *out);
  */
 esp_err_t elevator_call(uint8_t floor, elevator_dir_t dir);
 
-/** @brief Cambia entre modo demo y GPIO reales. */
-void elevator_set_demo(bool demo);
+
 
 /** @brief Recarga pisos y sensores sin reiniciar. */
 esp_err_t elevator_reload(const elevator_config_t *cfg);
 
 /** @brief true si queda alguna parada pendiente. */
 bool elevator_has_pending(void);
+bool elevator_sensor_gpio(int gpio);
 
 /**
  * @brief Avanza la maquina de estados.

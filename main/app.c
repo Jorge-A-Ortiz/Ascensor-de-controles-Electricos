@@ -54,8 +54,12 @@ esp_err_t app_load(void)
 
 esp_err_t app_apply_config(void)
 {
-    elevator_reload(&s_app.cfg);
-    elevator_set_demo(s_app.cfg.demo_mode);
+    elevator_state_t st;
+    elevator_get_state(&st);
+    if (st.moving || rules_enabled()) return ESP_ERR_INVALID_STATE;
+    esp_err_t rc = elevator_reload(&s_app.cfg);
+    if (rc != ESP_OK) return rc;
+    s_app.cfg.demo_mode = false;
     return storage_save_config(&s_app.cfg);
 }
 

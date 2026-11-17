@@ -33,8 +33,54 @@
 #include "elevator.h"
 #include "rules.h"
 #include "ui.h"
+#include "lvgl.h"
 
 static const int s_user_gpios[USER_GPIO_COUNT] = USER_GPIO_LIST;
+
+#if LV_USE_SNAPSHOT && LV_COLOR_DEPTH == 16
+static void cmd_snapshot(void)
+{
+    if (!board_lock(1000)) {
+        printf("ERR pantalla ocupada\n");
+        return;
+    }
+    lv_obj_t *screen = lv_scr_act();
+    const uint32_t size = lv_snapshot_buf_size_needed(screen, LV_IMG_CF_TRUE_COLOR);
+    uint16_t *pixels = heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    lv_img_dsc_t image;
+    const bool captured = pixels &&
+        lv_snapshot_take_to_buf(screen, LV_IMG_CF_TRUE_COLOR, &image, pixels, size) == LV_RES_OK;
+    board_unlock();
+    if (!captured) {
+        free(pixels);
+        printf("ERR captura fallida\n");
+        return;
+    }
+
+    char header[64];
+    int header_len = snprintf(header, sizeof(header), "SNAP565 %u %u\n",
+                              image.header.w, image.header.h);
+    uart_write_bytes(UART_NUM_0, header, header_len);
+    uint16_t runs[512];
+    size_t used = 0;
+    size_t count = (size_t)image.header.w * image.header.h;
+    for (size_t first = 0; first < count;) {
+        uint16_t color = pixels[first];
+        uint16_t len = 1;
+        while (first + len < count && len < UINT16_MAX && pixels[first + len] == color) {
+            len++;
+        }
+        runs[used++] = len;
+        runs[used++] = color;
+        first += len;
+        if (used == sizeof(runs) / sizeof(runs[0]) || first == count) {
+            uart_write_bytes(UART_NUM_0, runs, used * sizeof(runs[0]));
+            used = 0;
+        }
+    }
+    free(pixels);
+}
+#endif
 
 static bool user_gpio_ok(int n)
 {
@@ -51,10 +97,10 @@ static void cmd_state(void)
     elevator_state_t st;
     elevator_get_state(&st);
     app_state_t *a = app_state();
-    printf("ST floors=%u cur=%u known=%d dir=%d moving=%d doors=%d demo=%d "
+    printf("ST floors=%u cur=%u known=%d dir=%d moving=%d door_cmd=%d fault=%d observed_dir=%d "
            "blocks_on=%d nblocks=%u active=%u sound=%u pending=%d\n",
            st.floors, st.current_floor, st.position_known, st.dir, st.moving,
-           st.doors_open, st.demo_mode, a->cfg.blocks_enabled,
+           st.doors_open, st.fault, st.observed_dir, a->cfg.blocks_enabled,
            (unsigned)a->block_count, (unsigned)rules_active_count(),
            audio_get_volume(), elevator_has_pending());
     printf("ST rules:");
@@ -115,9 +161,9 @@ static void cmd_rules(void)
            rules_enabled(), rules_last_error());
     for (size_t i = 0; i < a->block_count; i++) {
         const rule_block_t *b = &a->blocks[i];
-        printf("RULES [%u] en=%d IF gpio%u==%u THEN gpio%u<=%u REST %u\n",
+        printf("RULES [%u] en=%d IF gpio%u==%u THEN gpio%u<=%u REST %u source=%u floor=%u action=%u target=%u\n",
                (unsigned)i, b->enabled, b->in_gpio, b->in_level, b->out_gpio,
-               b->out_level, b->rest_level);
+               b->out_level, b->rest_level, b->source, b->floor, b->action, b->action_floor);
     }
 }
 
@@ -162,7 +208,10 @@ static void handle_line(char *line)
             d = !strcmp(argv[2], "up") ? ELEV_DIR_UP
                 : !strcmp(argv[2], "down") ? ELEV_DIR_DOWN : ELEV_DIR_IDLE;
         }
-        printf("OK call -> %d\n", (int)elevator_call((uint8_t)atoi(argv[1]), d));
+        if (board_lock(100)) {
+            printf("OK call -> %d\n", (int)elevator_call((uint8_t)atoi(argv[1]), d));
+            board_unlock();
+        } else printf("ERR controlador ocupado\n");
     } else if (!strcmp(c, "click") && argc >= 2) {
         bool ok = ui_test_click(argv[1], argc >= 3 ? atoi(argv[2]) : 0);
         printf(ok ? "OK click %s\n" : "ERR click %s\n", argv[1]);
@@ -170,11 +219,28 @@ static void handle_line(char *line)
         bool ok = ui_test_dd(argv[1], atoi(argv[2]), atoi(argv[3]));
         printf(ok ? "OK dd %s\n" : "ERR dd %s\n", argv[1]);
     } else if (!strcmp(c, "goto") && argc >= 2) {
-        ui_test_goto(atoi(argv[1]));
-        printf("OK goto %s\n", argv[1]);
+        static const char *const screens[] = {"exterior", "interior", "tecnica", "bloques", "pisos"};
+        int screen = -1;
+        for (int i = 0; i < 5; i++) {
+            if (!strcmp(argv[1], screens[i]) ||
+                (argv[1][0] == '0' + i && argv[1][1] == '\0')) {
+                screen = i;
+                break;
+            }
+        }
+        if (screen >= 0) {
+            ui_test_goto(screen);
+            printf("OK goto %s\n", screens[screen]);
+        } else {
+            printf("ERR pantalla: exterior, interior, tecnica, bloques o pisos\n");
+        }
     } else if (!strcmp(c, "swipe") && argc >= 2) {
         ui_test_swipe(atoi(argv[1]));
         printf("OK swipe %s\n", argv[1]);
+#if LV_USE_SNAPSHOT && LV_COLOR_DEPTH == 16
+    } else if (!strcmp(c, "snapshot")) {
+        cmd_snapshot();
+#endif
     } else if (!strcmp(c, "ui")) {
         ui_test_dump();
     } else if (!strcmp(c, "gpio")) {

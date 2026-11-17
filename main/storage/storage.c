@@ -22,7 +22,7 @@ void storage_defaults(elevator_config_t *cfg)
     }
     memset(cfg, 0, sizeof(*cfg));
     cfg->floors       = 4;
-    cfg->demo_mode    = true;
+    cfg->demo_mode    = false;
     cfg->blocks_enabled = false;
     cfg->base3        = 1;
     cfg->sound        = 70;
@@ -95,6 +95,7 @@ esp_err_t storage_load_config(elevator_config_t *cfg)
         cfg->blocks_enabled = (u8 != 0);
     }
 
+    cfg->demo_mode = false; /* Migra configuraciones antiguas sin simular posicion. */
     nvs_close(h);
 
     if (cfg->floors < ELEVATOR_MIN_FLOORS || cfg->floors > ELEVATOR_MAX_FLOORS) {
@@ -162,6 +163,36 @@ esp_err_t storage_load_blocks(struct rule_block_s *blocks, size_t *count)
         return ESP_ERR_NVS_NOT_FOUND;
     }
 
+    typedef struct {
+        bool enabled;
+        uint8_t in_gpio, in_level, out_gpio, out_level, rest_level;
+        char note[RULES_NOTE_MAX];
+    } legacy_block_t;
+    char schema[16] = {0};
+    size_t schema_len = sizeof(schema);
+    nvs_get_str(h, STORAGE_KEY_RULES_VER, schema, &schema_len);
+    if (schema[0] && strcmp(schema, "rules_v1") != 0 &&
+        strcmp(schema, STORAGE_RULES_VERSION) != 0) {
+        nvs_close(h); *count = 0; return ESP_ERR_INVALID_STATE;
+    }
+    if (strcmp(schema, STORAGE_RULES_VERSION) != 0) {
+        legacy_block_t old[RULES_MAX_BLOCKS];
+        size_t bytes = sizeof(old);
+        esp_err_t rc = nvs_get_blob(h, STORAGE_KEY_BLOCKS, old, &bytes);
+        nvs_close(h);
+        if (rc != ESP_OK || bytes % sizeof(old[0]) || bytes / sizeof(old[0]) > *count) {
+            *count = 0;
+            return ESP_ERR_INVALID_SIZE;
+        }
+        *count = bytes / sizeof(old[0]);
+        for (size_t i = 0; blocks != NULL && i < *count; i++) {
+            rules_block_defaults(&blocks[i]);
+            memcpy(&blocks[i], &old[i], 6);
+            memcpy(blocks[i].note, old[i].note, RULES_NOTE_MAX);
+        }
+        return ESP_OK;
+    }
+
     size_t len = (blocks == NULL) ? 0 : (*count) * sizeof(rule_block_t);
     esp_err_t err = nvs_get_blob(h, STORAGE_KEY_BLOCKS, blocks, &len);
 
@@ -177,6 +208,7 @@ esp_err_t storage_load_blocks(struct rule_block_s *blocks, size_t *count)
         return err;
     }
 
+    if (len % sizeof(rule_block_t)) { *count = 0; return ESP_ERR_INVALID_SIZE; }
     *count = len / sizeof(rule_block_t);
     if (ver[0] != '\0' && strcmp(ver, STORAGE_RULES_VERSION) != 0) {
         ESP_LOGW(TAG, "Esquema de reglas '%s' distinto de '%s', se conserva",
