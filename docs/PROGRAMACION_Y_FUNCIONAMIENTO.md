@@ -93,7 +93,7 @@ reposo, conflicto de sensores y límites de llamadas exteriores.
 No valida LVGL en pantalla, NVS en la placa ni el firmware completo. Requiere
 compilar con ESP-IDF y probar cableado y pantalla en la CrowPanel correspondiente.
 
-## Configuracion cargada en la CrowPanel de tres pisos
+## Configuración de referencia de la CrowPanel de tres pisos
 
 | Boton de cabina | GPIO de salida | Entrada del PLC |
 | --- | --- | --- |
@@ -111,3 +111,51 @@ En Exterior e Interior, el sentido observado se obtiene comparando los dos
 ultimos pisos distintos detectados. Hasta que hay una transicion verificable
 se muestra **Sentido sin confirmar**. La prueba fisica de recorrido queda
 pendiente.
+
+## Verificación en la pantalla de la práctica
+
+### Configuración de los siete bloques
+
+Las cuatro fotos del 23 de noviembre de 2026 muestran el interruptor de
+programación por bloques encendido y el indicador **BLOQUES ACTIVOS 7/32**.
+Los siete bloques usan **Programación tipo Botón**, condición **Al pulsar**
+y acción **Salida GPIO** con **ESCRIBIR 1**.
+
+| Bloque | Botón | Filtro | Salida GPIO | Escribir | Reposo |
+| ---: | --- | --- | ---: | ---: | ---: |
+| 1 | CABINA | Piso 1 | 52 | 1 | 0 |
+| 2 | CABINA | Piso 2 | 51 | 1 | 0¹ |
+| 3 | CABINA | Piso 3 | 50 | 1 | 0 |
+| 4 | SUBIR | Piso 1 | 52 | 1 | 0¹ |
+| 5 | BAJAR | Piso 3 | 50 | 1 | 0 |
+| 6 | SUBIR | Piso 2 | 51 | 1 | 0 |
+| 7 | BAJAR | Piso 2 | 51 | 1 | 0¹ |
+
+¹ El campo **REPOSO** queda fuera de la foto en los bloques 2, 4 y 7.
+Se deduce el valor 0 porque el editor muestra los siete bloques activos y el
+motor exige el mismo reposo en todos los bloques que comparten un GPIO.
+El reposo 0 se ve directamente en el bloque 1 para GPIO 52 y en el 6 para
+GPIO 51.
+
+La botonera de cabina y las llamadas exteriores comparten una salida por
+piso. En el piso 1, **CABINA** o **SUBIR** activan GPIO 52. En el piso 2,
+**CABINA**, **SUBIR** o **BAJAR** activan GPIO 51. En el piso 3, **CABINA**
+o **BAJAR** activan GPIO 50. El motor combina las condiciones de cada salida
+por OR. El firmware configura un pulso de 300 ms para los botones. Con el
+cableado de referencia anterior, el PLC recibe una solicitud de piso en
+X000, X001 o X002. La solicitud del piso 2 llega por X001 tanto al pulsar
+**SUBIR** como al pulsar **BAJAR**.
+
+Las fotos confirman la configuración visible. La comprobación de los pulsos
+en las entradas del PLC y del movimiento físico requiere una prueba en el
+equipo.
+
+### Pruebas de la actualización
+
+| Prueba | Cambio incorporado en GitHub | Resultado en la CrowPanel |
+|---|---|---|
+| Animación de la puerta de la cabina | `bc8c4a2` | Pendiente de observar la apertura al llegar y el cierre antes de la siguiente salida |
+| Giro de pantalla y táctil | `178fbfe` | Pendiente de probar vertical → horizontal → vertical y comprobar que los toques coincidan en ambas orientaciones |
+
+Registrar cada hallazgo con la pantalla y orientación, los pasos para
+reproducirlo y el resultado observado.
