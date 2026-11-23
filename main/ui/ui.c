@@ -137,6 +137,109 @@ static elevator_state_t s_last_state;
 /*  Helpers (equivalentes a make_label / make_button / make_panel)    */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/*  Puerta animada de la cabina (dos hojas que se deslizan)            */
+/*  Solo se anima el rectangulo de la puerta (~100x96 px): barato.     */
+/* ------------------------------------------------------------------ */
+
+#define DOOR_MAX        2
+#define DOOR_ANIM_MS    600
+#define DOOR_POCKET     4     /* px que queda visible de cada hoja abierta */
+
+typedef struct {
+    lv_obj_t *frame, *left, *right;
+    int inner_w;          /* ancho util dentro del marco */
+    int open;             /* apertura actual 0..100 */
+    bool target;          /* ultimo destino pedido (true = abierta) */
+    bool used;
+} door_t;
+
+static door_t s_door[DOOR_MAX];
+static int s_door_n;
+
+static void door_apply(door_t *d, int open)
+{
+    d->open = open;
+    int half = d->inner_w / 2;
+    int w = DOOR_POCKET + (half - DOOR_POCKET) * (100 - open) / 100;
+    lv_obj_set_width(d->left, w);
+    lv_obj_set_x(d->left, 0);
+    lv_obj_set_width(d->right, w);
+    lv_obj_set_x(d->right, d->inner_w - w);
+}
+
+static void door_anim_cb(void *var, int32_t v)
+{
+    door_apply((door_t *)var, (int)v);
+}
+
+static lv_obj_t *door_leaf(lv_obj_t *parent, int h)
+{
+    lv_obj_t *l = lv_obj_create(parent);
+    lv_obj_remove_style_all(l);
+    lv_obj_clear_flag(l, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_height(l, h);
+    lv_obj_set_y(l, 0);
+    lv_obj_set_style_bg_color(l, lv_color_hex(0x5A6A78), 0);
+    lv_obj_set_style_bg_opa(l, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_color(l, lv_color_hex(0x93A4B3), 0);
+    lv_obj_set_style_border_width(l, 2, 0);
+    lv_obj_set_style_border_side(l, LV_BORDER_SIDE_FULL, 0);
+    return l;
+}
+
+static void make_door(lv_obj_t *parent, int x, int y, int w, int h, uint32_t accent)
+{
+    if (s_door_n >= DOOR_MAX) {
+        return;
+    }
+    door_t *d = &s_door[s_door_n++];
+    lv_obj_t *f = lv_obj_create(parent);
+    lv_obj_remove_style_all(f);
+    lv_obj_clear_flag(f, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_pos(f, x, y);
+    lv_obj_set_size(f, w, h);
+    lv_obj_set_style_bg_color(f, lv_color_hex(0x2E5D4B), 0);   /* cabina iluminada */
+    lv_obj_set_style_bg_opa(f, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_color(f, lv_color_hex(accent), 0);
+    lv_obj_set_style_border_width(f, 3, 0);
+    lv_obj_set_style_radius(f, 8, 0);
+    lv_obj_set_style_pad_all(f, 0, 0);
+    lv_obj_set_style_clip_corner(f, true, 0);
+
+    d->frame = f;
+    d->inner_w = w - 6;                   /* menos el borde */
+    int ih = h - 6;
+    d->left = door_leaf(f, ih);
+    d->right = door_leaf(f, ih);
+    d->target = false;
+    d->used = true;
+    door_apply(d, 0);                     /* arranca cerrada */
+}
+
+/* Lanza la animacion hacia abierta/cerrada solo si cambia el destino. */
+static void door_set(bool open)
+{
+    for (int i = 0; i < s_door_n; i++) {
+        door_t *d = &s_door[i];
+        if (!d->used || d->target == open) {
+            continue;
+        }
+        d->target = open;
+        int to = open ? 100 : 0;
+        lv_anim_del(d, door_anim_cb);
+        lv_anim_t a;
+        lv_anim_init(&a);
+        lv_anim_set_var(&a, d);
+        lv_anim_set_exec_cb(&a, door_anim_cb);
+        lv_anim_set_values(&a, d->open, to);
+        int span = d->open > to ? d->open - to : to - d->open;
+        lv_anim_set_time(&a, DOOR_ANIM_MS * span / 100 + 1);
+        lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);
+        lv_anim_start(&a);
+    }
+}
+
 static void tap_cb(lv_event_t *e)
 {
     (void)e;
@@ -453,6 +556,7 @@ static void create_exterior(lv_obj_t *scr)
                              LV_TEXT_ALIGN_LEFT);
     s_ext_dir = make_label(p, 225, 122, 265, 28, "", &F19, EXT_TEXT,
                            LV_TEXT_ALIGN_LEFT);
+    make_door(p, 248, 52, 90, 66, COL_OK);   /* bajo el titulo, entre el piso y la flecha */
 
     make_label(scr, 40, 685, 520, 34, "¿Hacia dónde vas?", &F30, EXT_TEXT,
                LV_TEXT_ALIGN_CENTER);
@@ -520,6 +624,7 @@ static void create_interior(lv_obj_t *scr)
                                LV_TEXT_ALIGN_CENTER);
     s_int_dir = make_label(scr, 40, 325, 520, 32, "", &F21, INT_ACCENT,
                            LV_TEXT_ALIGN_CENTER);
+    make_door(scr, 452, 175, 100, 96, INT_ACCENT);
     make_label(scr, 40, 394, 520, 36, "¿A qué piso quieres ir?", &F30, TEC_TEXT,
                LV_TEXT_ALIGN_CENTER);
 
@@ -1170,6 +1275,9 @@ void ui_refresh(void)
 
     char buf[64];
 
+    /* abre al llegar; se cierra en los ultimos 700 ms, antes de que la cabina salga */
+    door_set(st.doors_open && !st.doors_closing);
+
     char rows[1900] = "C=interior S=subir B=bajar\n\n";
     for (int f = st.floors; f >= 1; f--) {
         unsigned bit = 1u << (f-1);
@@ -1259,7 +1367,12 @@ void ui_on_event(const elevator_event_t *ev)
         s_travel_dir = ELEV_DIR_IDLE;
         break;
     case ELEV_EVT_DOORS:
-        audio_play(ev->doors_open ? AUDIO_SND_DOOR_OPEN : AUDIO_SND_DOOR_CLOSE);
+        /* abrir: al llegar; cerrar: suena al empezar a cerrarse (700 ms antes de salir) */
+        if (ev->message != NULL && strncmp(ev->message, "Cerrando", 8) == 0) {
+            audio_play(AUDIO_SND_DOOR_CLOSE);
+        } else if (ev->doors_open) {
+            audio_play(AUDIO_SND_DOOR_OPEN);
+        }
         break;
     case ELEV_EVT_REJECTED:
         audio_play(AUDIO_SND_ERROR);

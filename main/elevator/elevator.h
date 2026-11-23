@@ -53,6 +53,7 @@ typedef struct {
     bool     position_known;
     elevator_dir_t dir;
     bool     doors_open;
+    bool     doors_closing;  /* ultimos 700 ms del ciclo: la puerta se cierra (doors_open sigue true) */
     bool     demo_mode;
     bool     moving;
     uint16_t cabin_calls, up_calls, down_calls;

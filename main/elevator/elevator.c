@@ -21,6 +21,7 @@
 static const char *TAG = "ASCENSOR";
 
 #define DOORS_OPEN_MS       3000   /* puertas abiertas */
+#define DOORS_CLOSE_MS      700    /* tramo final del ciclo: animacion de cierre */
 #define SENSOR_FILTER_MS    30
 
 static elevator_config_t s_cfg;
@@ -68,6 +69,7 @@ static void emit(elevator_event_type_t type, uint8_t floor, const char *msg)
 static void open_doors(void)
 {
     s_doors_deadline_ms = now_ms() + DOORS_OPEN_MS;
+    s_state.doors_closing = false;   /* si se estaba cerrando, vuelve a abrir */
     if (!s_state.doors_open) {
         s_state.doors_open = true;
         s_doors_deadline_ms = now_ms() + DOORS_OPEN_MS;
@@ -437,8 +439,16 @@ void elevator_tick(void)
     uint32_t now = now_ms();
     read_sensors();
 
+    if (s_state.doors_open && !s_state.doors_closing &&
+        (int32_t)(s_doors_deadline_ms - now) <= DOORS_CLOSE_MS) {
+        /* ultimos 700 ms: la puerta se cierra; la cabina no sale hasta terminar */
+        s_state.doors_closing = true;
+        emit(ELEV_EVT_DOORS, s_state.current_floor, "Cerrando puertas...");
+    }
+
     if (s_state.doors_open && (int32_t)(now - s_doors_deadline_ms) >= 0) {
         s_state.doors_open = false;
+        s_state.doors_closing = false;
         emit(ELEV_EVT_DOORS, s_state.current_floor, "Puertas cerradas.");
         plan_next();
     }
