@@ -35,6 +35,7 @@ extern "C" {
 #define STORAGE_KEY_BASE3       "base3"
 #define STORAGE_KEY_SOUND       "sound"
 #define STORAGE_KEY_DEMO        "demo_mode"
+#define STORAGE_KEY_LANDSCAPE   "landscape"
 
 #define STORAGE_RULES_VERSION   "rules_v2"
 
@@ -49,6 +50,7 @@ typedef struct {
     bool    blocks_enabled;
     uint8_t base3;                             /* ajuste interno heredado */
     uint8_t sound;                             /* volumen/aviso */
+    bool    landscape;                         /* pantalla girada 90 grados (1024x600) */
 } elevator_config_t;
 
 /** @brief Valores de fabrica de la configuracion. */

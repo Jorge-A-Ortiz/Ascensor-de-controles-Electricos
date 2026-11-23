@@ -56,8 +56,11 @@
 #define TEC_MUTED       0x91A0B2
 #define TEC_GREEN       0x76D6A2
 
-#define SCREEN_W        LCD_H_RES
-#define SCREEN_H        LCD_V_RES
+/* Orientacion: vertical 600x1024 (por defecto) u horizontal 1024x600. */
+static bool s_land;
+#define SCREEN_W        (s_land ? LCD_V_RES : LCD_H_RES)
+#define SCREEN_H        (s_land ? LCD_H_RES : LCD_V_RES)
+#define LAND            s_land
 
 enum {
     ID_PREV = 1, ID_NEXT, ID_UP, ID_DOWN, ID_MINUS, ID_PLUS,
@@ -417,29 +420,53 @@ static void snd_toggle_cb(lv_event_t *e)
     audio_play(AUDIO_SND_ON);
 }
 
+static void rotate_async(void *unused);
+
+static void rot_cb(lv_event_t *e)
+{
+    (void)e;
+    /* No se reconstruye la UI dentro del propio evento del boton */
+    lv_async_call(rotate_async, NULL);
+}
+
+/* Boton de giro 90 grados (vertical <-> horizontal); esta en TODAS las pantallas */
+static void make_rotate_button(lv_obj_t *scr, int x, int y, int w, int h)
+{
+    lv_obj_t *b = make_button(scr, x, y, w, h, LV_SYMBOL_REFRESH, rot_cb, 0, NULL);
+    lv_obj_set_style_text_font(b, &F25, 0);
+}
+
 static void make_sound_button(lv_obj_t *scr)
 {
     if (s_snd_count >= 3) {
         return;
     }
     lv_obj_t *lbl = NULL;
-    lv_obj_t *b = make_button(scr, 496, 34, 60, 46, snd_icon(), snd_toggle_cb, 0, &lbl);
+    int x = LAND ? 952 : 496, y = LAND ? 24 : 34;
+    lv_obj_t *b = make_button(scr, x, y, 60, 46, snd_icon(), snd_toggle_cb, 0, &lbl);
     (void)b;
     s_snd_lbl[s_snd_count++] = lbl;
+    make_rotate_button(scr, x - 68, y, 60, 46);
 }
 
 /* Puntos indicadores + aviso inferior (0x40014dc8 del original) */
 static void make_footer(lv_obj_t *scr, int active, uint32_t accent)
 {
     make_sound_button(scr);
+    int dot_x = LAND ? 488 : 270, dot_y = LAND ? 580 : 948;
     for (int i = 0; i < 3; i++) {
-        lv_obj_t *d = make_panel(scr, 270 + 24 * i, 948, 8, 8);
+        lv_obj_t *d = make_panel(scr, dot_x + 24 * i, dot_y, 8, 8);
         lv_obj_set_style_bg_color(d, lv_color_hex(i == active ? accent
                                                               : COL_DOT_OFF), 0);
         lv_obj_set_style_border_width(d, 0, 0);
     }
-    make_label(scr, 40, 978, 520, 22, "<  Desliza para cambiar de pantalla  >",
-               &F19, accent, LV_TEXT_ALIGN_CENTER);
+    if (LAND) {
+        make_label(scr, 212, 554, 600, 22, "<  Desliza para cambiar de pantalla  >",
+                   &F19, accent, LV_TEXT_ALIGN_CENTER);
+    } else {
+        make_label(scr, 40, 978, 520, 22, "<  Desliza para cambiar de pantalla  >",
+                   &F19, accent, LV_TEXT_ALIGN_CENTER);
+    }
 }
 
 /* ------------------------------------------------------------------ */
@@ -537,16 +564,21 @@ static void ext_cb(lv_event_t *e)
 
 static void create_exterior(lv_obj_t *scr)
 {
-    make_label(scr, 44, 42, 360, 25, "ASCENSOR / EXTERIOR", &F21, EXT_MUTED,
-               LV_TEXT_ALIGN_LEFT);
-    make_label(scr, 40, 120, 520, 32, "ESTÁS EN EL PISO", &F25, EXT_MUTED,
-               LV_TEXT_ALIGN_CENTER);
-    s_ext_user_floor = make_label(scr, 100, 182, 400, 144, "", &F66, EXT_TEXT,
-                                  LV_TEXT_ALIGN_CENTER);
-    s_b_prev = make_button(scr, 90, 358, 190, 66, "Piso anterior", ext_cb, ID_PREV, NULL);
-    s_b_next = make_button(scr, 320, 358, 190, 66, "Piso siguiente", ext_cb, ID_NEXT, NULL);
+    /* Vertical: una columna. Horizontal: izquierda = estado, derecha = llamadas. */
+    int lx = LAND ? 40 : 44, lw = LAND ? 460 : 512;
 
-    lv_obj_t *p = make_panel(scr, 44, 470, 512, 170);
+    make_label(scr, 44, LAND ? 30 : 42, 360, 25, "ASCENSOR / EXTERIOR", &F21, EXT_MUTED,
+               LV_TEXT_ALIGN_LEFT);
+    make_label(scr, 40, LAND ? 84 : 120, LAND ? 460 : 520, 32, "ESTÁS EN EL PISO", &F25,
+               EXT_MUTED, LV_TEXT_ALIGN_CENTER);
+    s_ext_user_floor = make_label(scr, LAND ? 40 : 100, LAND ? 112 : 182, LAND ? 460 : 400,
+                                  144, "", &F66, EXT_TEXT, LV_TEXT_ALIGN_CENTER);
+    s_b_prev = make_button(scr, LAND ? 50 : 90, LAND ? 268 : 358, 190, 66, "Piso anterior",
+                           ext_cb, ID_PREV, NULL);
+    s_b_next = make_button(scr, LAND ? 270 : 320, LAND ? 268 : 358, 190, 66, "Piso siguiente",
+                           ext_cb, ID_NEXT, NULL);
+
+    lv_obj_t *p = make_panel(scr, lx, LAND ? 352 : 470, lw, 170);
     lv_obj_set_style_bg_color(p, lv_color_hex(COL_PANEL_EXT), 0);
     make_label(p, 24, 20, 330, 26, "EL ASCENSOR ESTÁ EN", &F21, EXT_MUTED,
                LV_TEXT_ALIGN_LEFT);
@@ -554,16 +586,17 @@ static void create_exterior(lv_obj_t *scr)
                                    LV_TEXT_ALIGN_LEFT);
     s_ext_arrow = make_label(p, 350, 46, 100, 65, "", &F59, EXT_TEXT,
                              LV_TEXT_ALIGN_LEFT);
-    s_ext_dir = make_label(p, 225, 122, 265, 28, "", &F19, EXT_TEXT,
+    s_ext_dir = make_label(p, 225, 122, LAND ? 220 : 265, 28, "", &F19, EXT_TEXT,
                            LV_TEXT_ALIGN_LEFT);
     make_door(p, 248, 52, 90, 66, COL_OK);   /* bajo el titulo, entre el piso y la flecha */
 
-    make_label(scr, 40, 685, 520, 34, "¿Hacia dónde vas?", &F30, EXT_TEXT,
-               LV_TEXT_ALIGN_CENTER);
-    lv_obj_t *up = make_button(scr, 44, 746, 246, 112, LV_SYMBOL_UP "  SUBIR",
-                               ext_cb, ID_UP, NULL);
-    lv_obj_t *dn = make_button(scr, 310, 746, 246, 112, LV_SYMBOL_DOWN "  BAJAR",
-                               ext_cb, ID_DOWN, NULL);
+    int rx = LAND ? 540 : 40;     /* bloque de llamadas */
+    make_label(scr, rx, LAND ? 110 : 685, LAND ? 444 : 520, 34, "¿Hacia dónde vas?", &F30,
+               EXT_TEXT, LV_TEXT_ALIGN_CENTER);
+    lv_obj_t *up = make_button(scr, LAND ? 540 : 44, LAND ? 170 : 746, LAND ? 210 : 246,
+                               LAND ? 130 : 112, LV_SYMBOL_UP "  SUBIR", ext_cb, ID_UP, NULL);
+    lv_obj_t *dn = make_button(scr, LAND ? 774 : 310, LAND ? 170 : 746, LAND ? 210 : 246,
+                               LAND ? 130 : 112, LV_SYMBOL_DOWN "  BAJAR", ext_cb, ID_DOWN, NULL);
     s_b_up = up;
     s_b_down = dn;
     lv_obj_set_style_bg_color(up, lv_color_hex(COL_CALL), 0);
@@ -571,7 +604,8 @@ static void create_exterior(lv_obj_t *scr)
     lv_obj_set_style_text_font(up, &F38, 0);
     lv_obj_set_style_text_font(dn, &F38, 0);
 
-    s_ext_hint = make_label(scr, 40, 884, 520, 48, "1) Elige tu piso   2) Pulsa SUBIR o BAJAR   3) Espera la campanilla",
+    s_ext_hint = make_label(scr, rx, LAND ? 330 : 884, LAND ? 444 : 520, LAND ? 70 : 48,
+                            "1) Elige tu piso   2) Pulsa SUBIR o BAJAR   3) Espera la campanilla",
                             &F19, EXT_MUTED, LV_TEXT_ALIGN_CENTER);
     make_footer(scr, 0, EXT_ACCENT);
 }
@@ -616,28 +650,29 @@ static void rebuild_interior_buttons(void)
 
 static void create_interior(lv_obj_t *scr)
 {
-    make_label(scr, 44, 42, 400, 28, "ASCENSOR / INTERIOR", &F21, INT_MUTED,
+    int cx = LAND ? 40 : 40, cw = LAND ? 380 : 520;     /* columna de estado */
+    make_label(scr, 44, LAND ? 30 : 42, 400, 28, "ASCENSOR / INTERIOR", &F21, INT_MUTED,
                LV_TEXT_ALIGN_LEFT);
-    make_label(scr, 40, 111, 520, 30, "ESTÁS AQUÍ", &F25, INT_MUTED,
+    make_label(scr, cx, LAND ? 90 : 111, cw, 30, "ESTÁS AQUÍ", &F25, INT_MUTED,
                LV_TEXT_ALIGN_CENTER);
-    s_int_current = make_label(scr, 100, 165, 400, 144, "", &F66, INT_ACCENT,
-                               LV_TEXT_ALIGN_CENTER);
-    s_int_dir = make_label(scr, 40, 325, 520, 32, "", &F21, INT_ACCENT,
+    s_int_current = make_label(scr, LAND ? 40 : 100, LAND ? 125 : 165, LAND ? 380 : 400, 144,
+                               "", &F66, INT_ACCENT, LV_TEXT_ALIGN_CENTER);
+    s_int_dir = make_label(scr, cx, LAND ? 285 : 325, cw, 32, "", &F21, INT_ACCENT,
                            LV_TEXT_ALIGN_CENTER);
-    make_door(scr, 452, 175, 100, 96, INT_ACCENT);
-    make_label(scr, 40, 394, 520, 36, "¿A qué piso quieres ir?", &F30, TEC_TEXT,
-               LV_TEXT_ALIGN_CENTER);
+    make_door(scr, LAND ? 322 : 452, LAND ? 150 : 175, 100, 96, INT_ACCENT);
+    make_label(scr, LAND ? 450 : 40, LAND ? 90 : 394, LAND ? 534 : 520, 36,
+               "¿A qué piso quieres ir?", &F30, TEC_TEXT, LV_TEXT_ALIGN_CENTER);
 
-    s_int_grid = make_panel(scr, 44, 454, 512, 416);
+    s_int_grid = make_panel(scr, LAND ? 456 : 44, LAND ? 140 : 454, 512, LAND ? 400 : 416);
     lv_obj_set_style_bg_opa(s_int_grid, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(s_int_grid, 0, 0);
     lv_obj_add_flag(s_int_grid, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_scroll_dir(s_int_grid, LV_DIR_VER);
     lv_obj_set_scrollbar_mode(s_int_grid, LV_SCROLLBAR_MODE_OFF);
 
-    s_int_status = make_label(scr, 40, 895, 520, 24,
-                              "Toca el piso al que quieres ir: la cabina lo agrega a su ruta.", &F19, INT_MUTED,
-                              LV_TEXT_ALIGN_CENTER);
+    s_int_status = make_label(scr, cx, LAND ? 340 : 895, cw, LAND ? 70 : 24,
+                              "Toca el piso al que quieres ir: la cabina lo agrega a su ruta.",
+                              &F19, INT_MUTED, LV_TEXT_ALIGN_CENTER);
     make_footer(scr, 1, INT_ACCENT);
 }
 
@@ -821,8 +856,64 @@ static void tec_level_cb(lv_event_t *e)
     tec_note("Regla GPIO guardada.");
 }
 
+/* Tecnica en horizontal: izquierda = edificio y editor; derecha = regla por piso */
+static void create_tecnica_land(lv_obj_t *scr)
+{
+    make_label(scr, 44, 30, 400, 28, "ASCENSOR / TÉCNICA", &F21, TEC_ACCENT, LV_TEXT_ALIGN_LEFT);
+    make_label(scr, 44, 70, 456, 40, "Configura tu edificio", &F30, TEC_TEXT, LV_TEXT_ALIGN_LEFT);
+
+    lv_obj_t *p = make_panel(scr, 40, 118, 460, 232);
+    make_label(p, 24, 20, 420, 30, "Cantidad de pisos", &F25, TEC_TEXT, LV_TEXT_ALIGN_LEFT);
+    s_tec_count = make_label(p, 24, 64, 170, 56, "", &F59, TEC_ACCENT, LV_TEXT_ALIGN_LEFT);
+    s_b_minus = make_button(p, 230, 58, 90, 64, "-", tec_floors_cb, ID_MINUS, NULL);
+    s_b_plus = make_button(p, 336, 58, 90, 64, "+", tec_floors_cb, ID_PLUS, NULL);
+    make_label(p, 24, 154, 220, 24, "Origen de posición", &F21, TEC_MUTED, LV_TEXT_ALIGN_LEFT);
+    s_tec_mode_lbl = make_label(p, 24, 182, 180, 32, "", &F30, TEC_TEXT, LV_TEXT_ALIGN_LEFT);
+    s_b_mode = make_button(p, 206, 150, 220, 60, "SENSORES", tec_mode_cb, ID_MODE,
+                           &s_tec_mode_btn_lbl);
+
+    s_tec_note = make_label(scr, 40, 364, 460, 60,
+                            "Elige el piso, asigna su GPIO y el nivel con el que se activa.",
+                            &F19, TEC_MUTED, LV_TEXT_ALIGN_CENTER);
+    s_b_edit = make_button(scr, 40, 440, 460, 57, "EDITAR BLOQUES Y NOTAS", open_blocks_cb,
+                           ID_EDIT, NULL);
+
+    make_label(scr, 524, 92, 240, 36, "Regla por piso", &F30, TEC_TEXT, LV_TEXT_ALIGN_LEFT);
+    s_tec_dd_floor = lv_dropdown_create(scr);
+    lv_obj_set_pos(s_tec_dd_floor, 774, 86);
+    lv_obj_set_size(s_tec_dd_floor, 206, 52);
+    style_dropdown(s_tec_dd_floor, &F25);
+    lv_obj_add_event_cb(s_tec_dd_floor, tec_floor_sel_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
+    lv_obj_t *rule = make_panel(scr, 524, 150, 460, 180);
+    lv_obj_set_style_border_color(rule, lv_color_hex(COL_BLUE_BORDER), 0);
+    make_label(rule, 24, 12, 410, 27, "SI entrada digital", &F25, TEC_ACCENT, LV_TEXT_ALIGN_LEFT);
+    s_tec_dd_gpio = lv_dropdown_create(rule);
+    lv_dropdown_set_options(s_tec_dd_gpio, s_gpio_options);
+    lv_obj_set_pos(s_tec_dd_gpio, 24, 53);
+    lv_obj_set_size(s_tec_dd_gpio, 220, 52);
+    style_dropdown(s_tec_dd_gpio, &F25);
+    lv_obj_add_event_cb(s_tec_dd_gpio, tec_gpio_cb, LV_EVENT_VALUE_CHANGED, NULL);
+    s_tec_dd_level = lv_dropdown_create(rule);
+    lv_dropdown_set_options(s_tec_dd_level, "= 0\n= 1");
+    lv_obj_set_pos(s_tec_dd_level, 262, 53);
+    lv_obj_set_size(s_tec_dd_level, 170, 52);
+    style_dropdown(s_tec_dd_level, &F25);
+    lv_obj_add_event_cb(s_tec_dd_level, tec_level_cb, LV_EVENT_VALUE_CHANGED, NULL);
+    s_tec_read = make_label(rule, 24, 126, 420, 32, "", &F25, TEC_TEXT, LV_TEXT_ALIGN_LEFT);
+
+    lv_obj_t *then = make_panel(scr, 524, 346, 460, 83);
+    lv_obj_set_style_border_color(then, lv_color_hex(COL_OK), 0);
+    s_tec_then = make_label(then, 24, 26, 420, 32, "", &F25, TEC_GREEN, LV_TEXT_ALIGN_LEFT);
+    make_footer(scr, 2, TEC_ACCENT);
+}
+
 static void create_tecnica(lv_obj_t *scr)
 {
+    if (LAND) {
+        create_tecnica_land(scr);
+        return;
+    }
     make_label(scr, 44, 42, 400, 28, "ASCENSOR / TÉCNICA", &F21, TEC_ACCENT,
                LV_TEXT_ALIGN_LEFT);
     make_label(scr, 44, 110, 512, 48, "Configura tu edificio", &F30, TEC_TEXT,
@@ -1072,8 +1163,9 @@ static void rebuild_block_rows(void)
     for (size_t i = 0; i < app->block_count; i++) {
         rule_block_t *b = &app->blocks[i];
 
-        lv_obj_t *box = make_panel(s_blk_list, 0, 0, 512, LV_SIZE_CONTENT);
-        lv_obj_set_width(box, 512);
+        int bw = LAND ? 936 : 512;
+        lv_obj_t *box = make_panel(s_blk_list, 0, 0, bw, LV_SIZE_CONTENT);
+        lv_obj_set_width(box, bw);
         lv_obj_set_flex_flow(box, LV_FLEX_FLOW_COLUMN);
         lv_obj_set_style_pad_all(box, 14, 0);
         lv_obj_set_style_pad_row(box, 10, 0);
@@ -1166,26 +1258,31 @@ static void create_blocks_screen(void)
     lv_obj_clear_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
     s_scr_blocks = scr;
 
-    make_label(scr, 44, 42, 330, 28, "EDITAR BLOQUES Y NOTAS", &F21, TEC_ACCENT,
+    int cw = LAND ? 936 : 512;               /* ancho del contenido */
+    make_label(scr, 44, LAND ? 30 : 42, 330, 28, "EDITAR BLOQUES Y NOTAS", &F21, TEC_ACCENT,
                LV_TEXT_ALIGN_LEFT);
-    s_b_back = make_button(scr, 420, 30, 136, 50, "VOLVER", close_blocks_cb, 0, NULL);
+    make_rotate_button(scr, LAND ? 770 : 330, LAND ? 24 : 30, 76, 50);
+    s_b_back = make_button(scr, LAND ? 848 : 420, LAND ? 24 : 30, 136, 50, "VOLVER",
+                           close_blocks_cb, 0, NULL);
 
-    lv_obj_t *head = make_panel(scr, 44, 100, 512, 120);
+    int top = LAND ? 90 : 100;
+    lv_obj_t *head = make_panel(scr, 44, top, cw, LAND ? 100 : 120);
     make_label(head, 24, 14, 330, 30, "Programación por bloques", &F25, TEC_TEXT,
                LV_TEXT_ALIGN_LEFT);
     s_blk_sw = lv_switch_create(head);
-    lv_obj_set_pos(s_blk_sw, 400, 14);
+    lv_obj_set_pos(s_blk_sw, cw - 112, 14);
     lv_obj_set_size(s_blk_sw, 90, 46);
     lv_obj_add_event_cb(s_blk_sw, blk_sw_cb, LV_EVENT_VALUE_CHANGED, NULL);
-    s_blk_status = make_label(head, 24, 70, 460, 28, "", &F21, TEC_MUTED,
+    s_blk_status = make_label(head, 24, 62, 460, 28, "", &F21, TEC_MUTED,
                               LV_TEXT_ALIGN_LEFT);
-    s_b_add = make_button(scr, 44, 234, 512, 60, "+ Agregar condicional",
-                blk_add_cb, 0, NULL);
+    s_b_add = make_button(scr, 44, top + (LAND ? 114 : 134), cw, 60, "+ Agregar condicional",
+                          blk_add_cb, 0, NULL);
 
+    int ly = top + (LAND ? 114 : 134) + 74;
     s_blk_list = lv_obj_create(scr);
     lv_obj_remove_style_all(s_blk_list);
-    lv_obj_set_pos(s_blk_list, 44, 308);
-    lv_obj_set_size(s_blk_list, 512, 690);
+    lv_obj_set_pos(s_blk_list, 44, ly);
+    lv_obj_set_size(s_blk_list, cw, SCREEN_H - ly - (LAND ? 8 : 26));
     lv_obj_set_flex_flow(s_blk_list, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(s_blk_list, 12, 0);
     lv_obj_add_flag(s_blk_list, LV_OBJ_FLAG_SCROLLABLE);
@@ -1197,14 +1294,30 @@ static void create_blocks_screen(void)
 /*  Creacion y refresco                                               */
 /* ------------------------------------------------------------------ */
 
-esp_err_t ui_create(void)
+static void build_overview(void)
 {
-    if (!board_lock(1000)) {
-        return ESP_ERR_TIMEOUT;
-    }
+    s_scr_overview = lv_obj_create(NULL);
+    lv_obj_set_style_bg_color(s_scr_overview, lv_color_hex(COL_BLACK), 0);
+    make_label(s_scr_overview, 30, LAND ? 28 : 35, 280, 45, "TODOS LOS PISOS", &F30, TEC_TEXT,
+               LV_TEXT_ALIGN_LEFT);
+    make_rotate_button(s_scr_overview, LAND ? 770 : 330, LAND ? 24 : 30, 76, 50);
+    make_button(s_scr_overview, LAND ? 848 : 420, LAND ? 24 : 30, 140, 50, "VOLVER",
+                overview_back_cb, 0, NULL);
+    lv_obj_t *list = lv_obj_create(s_scr_overview);
+    lv_obj_set_pos(list, 20, LAND ? 90 : 100);
+    lv_obj_set_size(list, LAND ? 984 : 555, LAND ? 490 : 850);
+    lv_obj_set_style_bg_color(list, lv_color_hex(COL_BLACK), 0);
+    lv_obj_set_scroll_dir(list, LV_DIR_VER);
+    s_overview_rows = make_label(list, 5, 5, LAND ? 940 : 520, LV_SIZE_CONTENT, "", &F21,
+                                 TEC_TEXT, LV_TEXT_ALIGN_LEFT);
+}
 
-    init_fonts();
-    build_gpio_options();
+/* Construye las 5 pantallas con la orientacion actual (s_land). */
+static void build_all(void)
+{
+    s_door_n = 0;
+    memset(s_door, 0, sizeof(s_door));
+    s_snd_count = 0;
 
     for (int i = 0; i < 3; i++) {
         s_scr[i] = new_screen();
@@ -1213,16 +1326,7 @@ esp_err_t ui_create(void)
     create_interior(s_scr[1]);
     create_tecnica(s_scr[2]);
     create_blocks_screen();
-    s_scr_overview = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(s_scr_overview, lv_color_hex(COL_BLACK), 0);
-    make_label(s_scr_overview, 30, 35, 360, 45, "TODOS LOS PISOS", &F30, TEC_TEXT, LV_TEXT_ALIGN_LEFT);
-    make_button(s_scr_overview, 420, 30, 140, 50, "VOLVER", overview_back_cb, 0, NULL);
-    lv_obj_t *list = lv_obj_create(s_scr_overview);
-    lv_obj_set_pos(list, 20, 100);
-    lv_obj_set_size(list, 555, 850);
-    lv_obj_set_style_bg_color(list, lv_color_hex(COL_BLACK), 0);
-    lv_obj_set_scroll_dir(list, LV_DIR_VER);
-    s_overview_rows = make_label(list, 5, 5, 520, LV_SIZE_CONTENT, "", &F21, TEC_TEXT, LV_TEXT_ALIGN_LEFT);
+    build_overview();
 
     rebuild_interior_buttons();
     rebuild_floor_dropdown();
@@ -1232,12 +1336,82 @@ esp_err_t ui_create(void)
     if (app_state()->cfg.blocks_enabled) {
         lv_obj_add_state(s_blk_sw, LV_STATE_CHECKED);
     }
+    s_last_state.floors = 0xFF;   /* fuerza que ui_refresh repinte todo */
+}
+
+esp_err_t ui_create(void)
+{
+    if (!board_lock(1000)) {
+        return ESP_ERR_TIMEOUT;
+    }
+
+    init_fonts();
+    build_gpio_options();
+
+    s_land = app_state()->cfg.landscape;
+    if (s_land) {
+        board_set_landscape(true);
+        lv_obj_set_size(lv_layer_top(), SCREEN_W, SCREEN_H);
+        lv_obj_set_size(lv_layer_sys(), SCREEN_W, SCREEN_H);
+    }
+    build_all();
 
     s_cur_scr = 0;
     lv_scr_load(s_scr[0]);
 
     board_unlock();
     return ESP_OK;
+}
+
+/* Gira la pantalla y reconstruye la UI. Con el mutex de LVGL tomado. */
+static void apply_orientation(bool land)
+{
+    if (s_msgbox != NULL) {
+        lv_msgbox_close(s_msgbox);
+        s_msgbox = NULL;
+    }
+    lv_obj_t *act = lv_scr_act();
+    int which = act == s_scr_blocks ? 3 : act == s_scr_overview ? 4 : s_cur_scr;
+    lv_obj_t *old[5] = { s_scr[0], s_scr[1], s_scr[2], s_scr_blocks, s_scr_overview };
+
+    s_land = land;
+    board_set_landscape(land);
+    lv_obj_set_size(lv_layer_top(), SCREEN_W, SCREEN_H);
+    lv_obj_set_size(lv_layer_sys(), SCREEN_W, SCREEN_H);
+
+    build_all();
+    lv_obj_t *nw[5] = { s_scr[0], s_scr[1], s_scr[2], s_scr_blocks, s_scr_overview };
+    lv_scr_load(nw[which]);
+    for (int i = 0; i < 5; i++) {
+        lv_obj_del(old[i]);
+    }
+}
+
+static void rotate_async(void *unused)
+{
+    (void)unused;
+    app_state_t *app = app_state();
+    audio_play(AUDIO_SND_SWIPE_NEXT);
+    apply_orientation(!s_land);
+    app->cfg.landscape = s_land;
+    storage_save_config(&app->cfg);
+    ui_refresh();
+}
+
+void ui_set_landscape(bool landscape)
+{
+    if (!board_lock(1000)) {
+        return;
+    }
+    if (landscape != s_land) {
+        rotate_async(NULL);
+    }
+    board_unlock();
+}
+
+bool ui_is_landscape(void)
+{
+    return s_land;
 }
 
 static void update_floor_button_states(const elevator_state_t *st)

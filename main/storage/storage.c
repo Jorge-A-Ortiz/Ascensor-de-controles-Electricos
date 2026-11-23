@@ -94,6 +94,9 @@ esp_err_t storage_load_config(elevator_config_t *cfg)
     if (nvs_get_u8(h, STORAGE_KEY_BLOCKS_ON, &u8) == ESP_OK) {
         cfg->blocks_enabled = (u8 != 0);
     }
+    if (nvs_get_u8(h, STORAGE_KEY_LANDSCAPE, &u8) == ESP_OK) {
+        cfg->landscape = (u8 != 0);
+    }
 
     cfg->demo_mode = false; /* Migra configuraciones antiguas sin simular posicion. */
     nvs_close(h);
@@ -137,6 +140,9 @@ esp_err_t storage_save_config(const elevator_config_t *cfg)
     }
     if (err == ESP_OK) {
         err = nvs_set_u8(h, STORAGE_KEY_SOUND, cfg->sound);
+    }
+    if (err == ESP_OK) {
+        err = nvs_set_u8(h, STORAGE_KEY_LANDSCAPE, cfg->landscape ? 1 : 0);
     }
 
     if (err == ESP_OK) {

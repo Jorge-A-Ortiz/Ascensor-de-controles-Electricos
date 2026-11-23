@@ -234,6 +234,10 @@ static void handle_line(char *line)
         } else {
             printf("ERR pantalla: exterior, interior, tecnica, bloques o pisos\n");
         }
+    } else if (!strcmp(c, "rot")) {
+        /* rot [0|1]: sin argumento alterna; 1 = horizontal 1024x600 */
+        ui_set_landscape(argc >= 2 ? atoi(argv[1]) != 0 : !ui_is_landscape());
+        printf("OK rot %s\n", ui_is_landscape() ? "horizontal 1024x600" : "vertical 600x1024");
     } else if (!strcmp(c, "swipe") && argc >= 2) {
         ui_test_swipe(atoi(argv[1]));
         printf("OK swipe %s\n", argv[1]);

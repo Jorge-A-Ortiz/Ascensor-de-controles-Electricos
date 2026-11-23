@@ -65,6 +65,16 @@ void board_perf_get(board_perf_t *out);
 int board_ppa_selftest(void);
 void board_perf_reset(void);
 
+/**
+ * @brief Gira la pantalla entre vertical (600x1024) y horizontal (1024x600).
+ *
+ * Cambia la resolucion logica de LVGL, el volcado (PPA con/sin rotacion) y los
+ * ejes del tactil. Hay que llamarla con el mutex de LVGL tomado; despues la UI
+ * debe reconstruirse con las nuevas dimensiones (ui_set_landscape lo hace).
+ */
+void board_set_landscape(bool landscape);
+bool board_is_landscape(void);
+
 /** @brief Handle del bus I2C compartido (tactil y perifericos). */
 void *board_i2c_bus(void);
 

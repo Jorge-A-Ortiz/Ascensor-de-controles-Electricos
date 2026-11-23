@@ -234,6 +234,8 @@ static bool ppa_done_cb(ppa_client_handle_t client, ppa_event_data_t *event, voi
     return woken == pdTRUE;
 }
 static uint8_t *s_fb;
+static bool s_landscape;
+static esp_lcd_touch_handle_t s_tp;
 static lv_disp_draw_buf_t s_draw_buf;
 static lv_disp_drv_t s_disp_drv;
 
@@ -270,11 +272,12 @@ static void ppa_flush_cb(lv_disp_drv_t *drv, const lv_area_t *a, lv_color_t *map
             .buffer = s_fb,
             .buffer_size = FB_BYTES,
             .pic_w = LCD_PANEL_H_RES, .pic_h = LCD_PANEL_V_RES,
-            .block_offset_x = (uint32_t)a->y1,
-            .block_offset_y = (uint32_t)(LCD_PANEL_V_RES - 1 - a->x2),
+            /* vertical: X = y, Y = 599 - x (giro 90); horizontal: copia directa */
+            .block_offset_x = (uint32_t)(s_landscape ? a->x1 : a->y1),
+            .block_offset_y = (uint32_t)(s_landscape ? a->y1 : LCD_PANEL_V_RES - 1 - a->x2),
             .srm_cm = PPA_SRM_COLOR_MODE_RGB565,
         },
-        .rotation_angle = PPA_SRM_ROTATION_ANGLE_90,
+        .rotation_angle = s_landscape ? PPA_SRM_ROTATION_ANGLE_0 : PPA_SRM_ROTATION_ANGLE_90,
         .scale_x = 1.0f,
         .scale_y = 1.0f,
         .mode = PPA_TRANS_MODE_NON_BLOCKING,
@@ -410,6 +413,7 @@ static esp_err_t lvgl_init(void)
     };
     ESP_RETURN_ON_ERROR(esp_lcd_touch_new_i2c_gt911(tp_io, &tp_cfg, &tp),
                         TAG, "gt911");
+    s_tp = tp;
 
     lvgl_port_touch_cfg_t touch_cfg = {
         .disp   = s_disp,
@@ -440,6 +444,31 @@ esp_err_t board_init(void)
     board_set_backlight(70);
     ESP_LOGI(TAG, "Display y tactil listos (600x1024, GT911)");
     return ESP_OK;
+}
+
+void board_set_landscape(bool landscape)
+{
+    if (landscape == s_landscape || s_disp == NULL) {
+        return;
+    }
+    s_landscape = landscape;
+    /* Tactil: el GT911 entrega coordenadas nativas (1024x600). En horizontal se
+     * usan tal cual; en vertical se refleja Y y se intercambian los ejes. */
+    if (s_tp != NULL) {
+        esp_lcd_touch_set_swap_xy(s_tp, !landscape);
+        esp_lcd_touch_set_mirror_x(s_tp, false);
+        esp_lcd_touch_set_mirror_y(s_tp, !landscape);
+    }
+    s_disp_drv.hor_res = landscape ? LCD_V_RES : LCD_H_RES;
+    s_disp_drv.ver_res = landscape ? LCD_H_RES : LCD_V_RES;
+    lv_disp_drv_update(s_disp, &s_disp_drv);
+    ESP_LOGI(TAG, "Pantalla %s (%dx%d)", landscape ? "horizontal" : "vertical",
+             (int)s_disp_drv.hor_res, (int)s_disp_drv.ver_res);
+}
+
+bool board_is_landscape(void)
+{
+    return s_landscape;
 }
 
 bool board_lock(int timeout_ms)

@@ -24,6 +24,10 @@ void ui_refresh(void);
 /** @brief Notifica un evento del ascensor en la pantalla activa. */
 void ui_on_event(const elevator_event_t *ev);
 
+/** @brief Gira la pantalla (true = horizontal 1024x600). Reconstruye la UI y guarda el ajuste. */
+void ui_set_landscape(bool landscape);
+bool ui_is_landscape(void);
+
 /** @brief Muestra un aviso modal con boton CERRAR. */
 void ui_show_message(const char *title, const char *text);
 
